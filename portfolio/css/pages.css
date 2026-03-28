@@ -4,7 +4,7 @@
 
 /* ---- Page Hero (used on all inner pages) ---- */
 .page-hero {
-    padding: calc(var(--header-h) + 60px) 5% 60px;
+    padding: calc(var(--header-h) + 80px) 5% 60px;
     background: var(--dark);
     text-align: center;
     position: relative;
