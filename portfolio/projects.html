@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects — Shahab Rashidian Dezfuly</title>
+    <meta name="description" content="Professional projects: AWS cloud infrastructure, authentication microservices, e-commerce APIs, Flutter mobile apps, and more.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://shahabrdz.dev/projects.html">
+
+    <meta property="og:title" content="Projects — Shahab Rashidian Dezfuly">
+    <meta property="og:description" content="Professional projects in cloud architecture, backend development, and mobile applications.">
+    <meta property="og:url" content="https://shahabrdz.dev/projects.html">
+    <meta property="og:type" content="website">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body id="top">
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header__inner">
+            <a href="index.html" class="header__logo">shahab.</a>
+            <nav class="nav" id="nav">
+                <a href="about.html" class="nav__link"><span data-i18n="nav_about">about</span></a>
+                <a href="projects.html" class="nav__link nav__link--active"><span data-i18n="nav_portfolio">projects</span></a>
+                <a href="publications.html" class="nav__link"><span data-i18n="nav_publications">publications</span></a>
+                <a href="contact.html" class="nav__link"><span data-i18n="nav_contact">contact</span></a>
+                <div class="lang-switch lang-switch--mobile">
+                    <button class="lang-btn lang-btn--active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="tr">TR</button>
+                    <button class="lang-btn" data-lang="ar">AR</button>
+                </div>
+            </nav>
+            <div class="header__social">
+                <a href="https://www.linkedin.com/in/shahab-rashidian-17647a166/" target="_blank" rel="noopener" class="header__social-link"><i class="fab fa-linkedin-in"></i></a>
+                <a href="https://github.com/shahabRDZ" target="_blank" rel="noopener" class="header__social-link"><i class="fab fa-github"></i></a>
+            </div>
+            <div class="header__controls">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                    <i class="fas fa-sun"></i>
+                </button>
+                <div class="lang-switch" id="langSwitch">
+                    <button class="lang-btn lang-btn--active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="tr">TR</button>
+                    <button class="lang-btn" data-lang="ar">AR</button>
+                </div>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Menu">
+                <span class="nav-toggle__bar"></span>
+                <span class="nav-toggle__bar"></span>
+                <span class="nav-toggle__bar"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== PAGE HERO ===== -->
+    <section class="page-hero">
+        <h1 class="page-hero__title">Projects</h1>
+        <p class="page-hero__sub">A collection of professional and personal projects spanning <strong>cloud infrastructure</strong>, <strong>backend microservices</strong>, <strong>mobile applications</strong>, and <strong>full-stack platforms</strong>.</p>
+    </section>
+
+    <!-- ===== CONTENT ===== -->
+    <div class="page-content">
+
+        <!-- AWS Cloud Infrastructure -->
+        <div class="project-detail">
+            <div class="project-detail__header">
+                <div class="project-detail__icon" style="background: linear-gradient(135deg, #FF9900, #232F3E);">
+                    <i class="fas fa-cloud"></i>
+                </div>
+                <div class="project-detail__meta">
+                    <h2 class="project-detail__title">AWS Cloud Infrastructure</h2>
+                    <p class="project-detail__stack">Terraform &middot; AWS &middot; VPC &middot; ECS Fargate &middot; RDS &middot; ALB &middot; CloudWatch</p>
+                </div>
+                <a href="https://github.com/shahabRDZ/aws-cloud-infra" target="_blank" rel="noopener" class="project-detail__link">
+                    <i class="fab fa-github"></i> View Code
+                </a>
+            </div>
+            <div class="project-detail__body">
+                <p class="project-detail__desc">A production-ready AWS infrastructure provisioned entirely with Terraform. This project demonstrates a complete cloud environment including a custom VPC with public and private subnets across multiple availability zones, an ECS Fargate cluster for containerized workloads, an RDS PostgreSQL instance in a private subnet, and an Application Load Balancer for traffic distribution. CloudWatch dashboards and alarms provide full observability. The architecture follows AWS Well-Architected Framework principles with a focus on security, reliability, and cost optimization.</p>
+                <div class="project-detail__features">
+                    <span class="project-feature"><i class="fas fa-check"></i> Infrastructure as Code</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Multi-AZ deployment</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Auto-scaling</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Monitoring & Alerts</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Private subnets for data layer</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Microservice -->
+        <div class="project-detail">
+            <div class="project-detail__header">
+                <div class="project-detail__icon" style="background: linear-gradient(135deg, #009688, #00BCD4);">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="project-detail__meta">
+                    <h2 class="project-detail__title">Authentication Microservice</h2>
+                    <p class="project-detail__stack">FastAPI &middot; JWT &middot; PostgreSQL &middot; Redis &middot; Docker &middot; Pytest</p>
+                </div>
+                <a href="https://github.com/shahabRDZ/fastapi-auth-service" target="_blank" rel="noopener" class="project-detail__link">
+                    <i class="fab fa-github"></i> View Code
+                </a>
+            </div>
+            <div class="project-detail__body">
+                <p class="project-detail__desc">A standalone authentication and authorization microservice built with FastAPI and designed to be dropped into any microservice architecture. It implements JWT-based authentication with access and refresh tokens, role-based access control (RBAC), and secure password hashing. Redis is used for token blacklisting and session management, while PostgreSQL stores user data. The service includes comprehensive test coverage with Pytest, Docker containerization, and OpenAPI documentation out of the box.</p>
+                <div class="project-detail__features">
+                    <span class="project-feature"><i class="fas fa-check"></i> JWT access/refresh tokens</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Role-based access control</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Redis token blacklist</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Dockerized</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Full test coverage</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- E-Commerce API -->
+        <div class="project-detail">
+            <div class="project-detail__header">
+                <div class="project-detail__icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-cart-shopping"></i>
+                </div>
+                <div class="project-detail__meta">
+                    <h2 class="project-detail__title">E-Commerce REST API</h2>
+                    <p class="project-detail__stack">Python &middot; REST API &middot; Stripe &middot; PostgreSQL &middot; Docker</p>
+                </div>
+                <a href="https://github.com/shahabRDZ/ecommerce-api" target="_blank" rel="noopener" class="project-detail__link">
+                    <i class="fab fa-github"></i> View Code
+                </a>
+            </div>
+            <div class="project-detail__body">
+                <p class="project-detail__desc">A full-featured e-commerce backend API supporting product catalog management, user accounts, shopping cart operations, order processing, and Stripe payment integration. The architecture follows clean separation of concerns with dedicated service layers, repository patterns, and input validation. Includes features like inventory tracking, order history, search and filtering, and webhook handling for payment events. Fully containerized with Docker for consistent development and deployment.</p>
+                <div class="project-detail__features">
+                    <span class="project-feature"><i class="fas fa-check"></i> Product catalog & search</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Stripe payments</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Order management</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Inventory tracking</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Webhook handling</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Tracker -->
+        <div class="project-detail">
+            <div class="project-detail__header">
+                <div class="project-detail__icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
+                    <i class="fas fa-mobile-screen-button"></i>
+                </div>
+                <div class="project-detail__meta">
+                    <h2 class="project-detail__title">Expense Tracker App</h2>
+                    <p class="project-detail__stack">Flutter &middot; Dart &middot; BLoC &middot; SQLite &middot; Charts &middot; Material 3</p>
+                </div>
+                <a href="https://github.com/shahabRDZ/flutter-expense-tracker" target="_blank" rel="noopener" class="project-detail__link">
+                    <i class="fab fa-github"></i> View Code
+                </a>
+            </div>
+            <div class="project-detail__body">
+                <p class="project-detail__desc">A cross-platform personal finance tracker built with Flutter and Material 3 design. Users can log income and expenses across custom categories, visualize spending trends with interactive charts, set monthly budgets, and export reports. The app uses the BLoC pattern for state management and SQLite for offline-first local storage, ensuring smooth performance without requiring an internet connection. Dark and light themes are supported system-wide.</p>
+                <div class="project-detail__features">
+                    <span class="project-feature"><i class="fas fa-check"></i> Income & expense tracking</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Interactive charts</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Offline-first (SQLite)</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> BLoC state management</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Material 3 design</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mafia Party Game -->
+        <div class="project-detail">
+            <div class="project-detail__header">
+                <div class="project-detail__icon" style="background: linear-gradient(135deg, #ff0844, #ffb199);">
+                    <i class="fas fa-masks-theater"></i>
+                </div>
+                <div class="project-detail__meta">
+                    <h2 class="project-detail__title">Mafia Party Game</h2>
+                    <p class="project-detail__stack">Web App &middot; Real-time &middot; Multiplayer &middot; Docker</p>
+                </div>
+                <a href="https://github.com/shahabRDZ/GAME.Mafia" target="_blank" rel="noopener" class="project-detail__link">
+                    <i class="fab fa-github"></i> View Code
+                </a>
+            </div>
+            <div class="project-detail__body">
+                <p class="project-detail__desc">A real-time multiplayer web application for playing the social deduction game "Mafia" online. Players can create or join rooms, get assigned random roles (Mafia, Citizen, Doctor, Detective), and play through day/night cycles with voting mechanics. The game features real-time synchronization between all players, a chat system, role reveal animations, and game history tracking. Containerized with Docker for easy self-hosting.</p>
+                <div class="project-detail__features">
+                    <span class="project-feature"><i class="fas fa-check"></i> Real-time multiplayer</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Role assignment</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Voting system</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> In-game chat</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Docker deployment</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HDesk Ticketing -->
+        <div class="project-detail">
+            <div class="project-detail__header">
+                <div class="project-detail__icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <div class="project-detail__meta">
+                    <h2 class="project-detail__title">HDesk Ticketing System</h2>
+                    <p class="project-detail__stack">Full Stack &middot; Help Desk &middot; Support Platform</p>
+                </div>
+                <a href="https://github.com/shahabRDZ/HD-desk" target="_blank" rel="noopener" class="project-detail__link">
+                    <i class="fab fa-github"></i> View Code
+                </a>
+            </div>
+            <div class="project-detail__body">
+                <p class="project-detail__desc">A comprehensive help desk and customer support platform that enables teams to manage support requests through a structured ticketing workflow. Features include ticket creation and assignment, priority levels, status tracking, internal notes, and a knowledge base. The system supports multiple agents, department routing, and SLA tracking to ensure timely responses. Built as a full-stack application with a clean, intuitive interface for both support agents and end users.</p>
+                <div class="project-detail__features">
+                    <span class="project-feature"><i class="fas fa-check"></i> Ticket lifecycle management</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Agent assignment & routing</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Priority & SLA tracking</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Knowledge base</span>
+                    <span class="project-feature"><i class="fas fa-check"></i> Multi-department support</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="footer__inner">
+            <a href="index.html" class="footer__left">&copy; 2026 Shahab Rashidian Dezfuly</a>
+            <nav class="footer__nav">
+                <a href="about.html">about</a>
+                <a href="projects.html">projects</a>
+                <a href="publications.html">publications</a>
+                <a href="contact.html">contact</a>
+            </nav>
+        </div>
+        <a href="#top" class="footer__top" aria-label="Back to top"><i class="fas fa-chevron-up"></i></a>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,652 @@
+/* ======================
+   Pages — Inner page styles
+   ====================== */
+
+/* ---- Page Hero (used on all inner pages) ---- */
+.page-hero {
+    padding: calc(var(--header-h) + 60px) 5% 60px;
+    background: var(--dark);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--dark-3);
+}
+
+.page-hero__title {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    color: var(--pure-white);
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+}
+
+.page-hero__sub {
+    font-size: 1.05rem;
+    color: var(--gray);
+    max-width: 620px;
+    margin: 0 auto;
+    line-height: 1.7;
+}
+
+.page-hero__sub strong {
+    color: var(--white);
+}
+
+body.light .page-hero { background: #f5f5f5; }
+body.light .page-hero::after { background: #e0e0e0; }
+
+
+/* ---- Content Container ---- */
+.page-content {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 60px 5%;
+}
+
+
+/* ---- About Page ---- */
+.about-intro {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+    margin-bottom: 80px;
+}
+
+.about-intro__text {
+    font-size: 1rem;
+    color: var(--gray-light);
+    line-height: 1.8;
+}
+
+.about-intro__text p {
+    margin-bottom: 16px;
+}
+
+.about-intro__text strong {
+    color: var(--white);
+}
+
+.about-intro__photo {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.about-intro__photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Skills Grid */
+.skills-section {
+    margin-bottom: 80px;
+}
+
+.skills-section__title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.skill-card {
+    background: var(--dark-2);
+    border: 1px solid var(--dark-3);
+    border-radius: 12px;
+    padding: 28px;
+    transition: all 0.3s;
+}
+
+.skill-card:hover {
+    border-color: rgba(124, 106, 239, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.skill-card__icon {
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin-bottom: 14px;
+}
+
+.skill-card__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 8px;
+}
+
+.skill-card__desc {
+    font-size: 0.88rem;
+    color: var(--gray);
+    line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.skill-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.skill-tag {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    background: rgba(124, 106, 239, 0.08);
+    border: 1px solid rgba(124, 106, 239, 0.15);
+    border-radius: 14px;
+}
+
+body.light .skill-card {
+    background: #fff;
+    border-color: #e0e0e0;
+}
+
+body.light .skill-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Education & Experience */
+.timeline-section {
+    margin-bottom: 80px;
+}
+
+.timeline-section__title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 32px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--dark-3);
+}
+
+.timeline__item {
+    position: relative;
+    margin-bottom: 36px;
+}
+
+.timeline__item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline__dot {
+    position: absolute;
+    left: -32px;
+    top: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--black);
+}
+
+.timeline__date {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+}
+
+.timeline__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 4px;
+}
+
+.timeline__place {
+    font-size: 0.88rem;
+    color: var(--gray-light);
+    margin-bottom: 8px;
+}
+
+.timeline__desc {
+    font-size: 0.88rem;
+    color: var(--gray);
+    line-height: 1.6;
+}
+
+body.light .timeline::before { background: #e0e0e0; }
+body.light .timeline__dot { border-color: #fff; }
+
+
+/* ---- Projects Page ---- */
+.project-detail {
+    background: var(--dark-2);
+    border: 1px solid var(--dark-3);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    transition: all 0.3s;
+}
+
+.project-detail:hover {
+    border-color: rgba(124, 106, 239, 0.25);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.project-detail__header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 32px 32px 0;
+}
+
+.project-detail__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.project-detail__meta {
+    flex: 1;
+}
+
+.project-detail__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 4px;
+}
+
+.project-detail__stack {
+    font-size: 0.82rem;
+    color: var(--gray);
+    font-family: var(--font-mono);
+}
+
+.project-detail__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: rgba(124, 106, 239, 0.12);
+    color: var(--accent);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.project-detail__link:hover {
+    background: rgba(124, 106, 239, 0.25);
+    transform: translateY(-1px);
+}
+
+.project-detail__body {
+    padding: 24px 32px 32px;
+}
+
+.project-detail__desc {
+    font-size: 0.95rem;
+    color: var(--gray-light);
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.project-detail__features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.project-feature {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(56, 217, 169, 0.06);
+    border: 1px solid rgba(56, 217, 169, 0.15);
+    border-radius: 20px;
+    font-size: 0.78rem;
+    color: #38d9a9;
+    font-weight: 500;
+}
+
+.project-feature i {
+    font-size: 0.7rem;
+}
+
+body.light .project-detail {
+    background: #fff;
+    border-color: #e0e0e0;
+}
+
+body.light .project-detail:hover {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+
+/* ---- Publications Page ---- */
+.pub-card {
+    background: var(--dark-2);
+    border: 1px solid var(--dark-3);
+    border-radius: 16px;
+    padding: 36px;
+    margin-bottom: 32px;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.pub-card:hover {
+    border-color: rgba(124, 106, 239, 0.3);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.pub-card__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px;
+    background: rgba(124, 106, 239, 0.12);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+}
+
+.pub-card__title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.pub-card__authors {
+    font-size: 0.88rem;
+    color: var(--gray-light);
+    margin-bottom: 8px;
+}
+
+.pub-card__authors strong {
+    color: var(--accent);
+}
+
+.pub-card__venue {
+    font-size: 0.85rem;
+    color: var(--gray);
+    font-style: italic;
+    margin-bottom: 16px;
+}
+
+.pub-card__desc {
+    font-size: 0.92rem;
+    color: var(--gray-light);
+    line-height: 1.7;
+    margin-bottom: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--dark-3);
+}
+
+.pub-card__footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.pub-card__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: rgba(56, 217, 169, 0.06);
+    border: 1px solid rgba(56, 217, 169, 0.15);
+    border-radius: 16px;
+    font-size: 0.75rem;
+    color: #38d9a9;
+    font-weight: 500;
+}
+
+.pub-card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    background: var(--accent);
+    color: white;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    margin-left: auto;
+}
+
+.pub-card__link:hover {
+    background: #5b4cc4;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(124, 106, 239, 0.35);
+}
+
+.pub-card__info {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.pub-card__info-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--gray);
+}
+
+.pub-card__info-item i {
+    color: var(--accent);
+    font-size: 0.75rem;
+}
+
+body.light .pub-card {
+    background: #fff;
+    border-color: #e0e0e0;
+}
+
+body.light .pub-card:hover {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+body.light .pub-card__desc {
+    border-top-color: #e0e0e0;
+}
+
+
+/* ---- CTA Banner (used on index) ---- */
+.cta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+.cta-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 40px 24px;
+    background: var(--dark-2);
+    border: 1px solid var(--dark-3);
+    border-radius: 16px;
+    transition: all 0.3s;
+}
+
+.cta-card:hover {
+    border-color: rgba(124, 106, 239, 0.3);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.cta-card__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: rgba(124, 106, 239, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: var(--accent);
+    margin-bottom: 16px;
+}
+
+.cta-card__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+}
+
+.cta-card__sub {
+    font-size: 0.85rem;
+    color: var(--gray);
+    line-height: 1.5;
+}
+
+body.light .cta-card {
+    background: #fff;
+    border-color: #e0e0e0;
+}
+
+body.light .cta-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+
+/* ---- Nav active state ---- */
+.nav__link--active {
+    color: var(--accent) !important;
+}
+
+
+/* ---- Responsive for inner pages ---- */
+@media (max-width: 900px) {
+    .about-intro {
+        grid-template-columns: 1fr;
+    }
+
+    .about-intro__photo {
+        max-width: 400px;
+        margin: 0 auto;
+        order: -1;
+    }
+
+    .cta-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-hero {
+        padding: calc(var(--header-h) + 40px) 16px 40px;
+    }
+
+    .page-hero__title {
+        font-size: 1.8rem;
+    }
+
+    .page-content {
+        padding: 40px 16px;
+    }
+
+    .about-intro {
+        gap: 28px;
+    }
+
+    .skills-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .project-detail__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 20px 20px 0;
+    }
+
+    .project-detail__body {
+        padding: 20px;
+    }
+
+    .pub-card {
+        padding: 24px 20px;
+    }
+
+    .pub-card__info {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .pub-card__footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pub-card__link {
+        margin-left: 0;
+        margin-top: 8px;
+    }
+
+    .cta-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .cta-card {
+        padding: 28px 20px;
+    }
+}

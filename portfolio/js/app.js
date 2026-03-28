@@ -17,7 +17,8 @@
     // ---- Language Switching ----
     var translations = {
         nav_about: { en: 'about', tr: 'hakkımda', ar: 'عني' },
-        nav_portfolio: { en: 'portfolio', tr: 'portföy', ar: 'أعمالي' },
+        nav_portfolio: { en: 'projects', tr: 'projeler', ar: 'مشاريع' },
+        nav_publications: { en: 'publications', tr: 'yayınlar', ar: 'منشورات' },
         nav_contact: { en: 'contact', tr: 'iletişim', ar: 'تواصل' },
 
         hero_left_title: { en: 'engineer', tr: 'mühendis', ar: 'مهندس' },
@@ -150,13 +151,19 @@
     }
 
 
-    // ---- Smooth scroll ----
+    // ---- Smooth scroll (only for same-page anchors) ----
     var anchors = document.querySelectorAll('a[href^="#"]');
     for (var j = 0; j < anchors.length; j++) {
         anchors[j].addEventListener('click', function (e) {
-            e.preventDefault();
-            var target = document.querySelector(this.getAttribute('href'));
+            var href = this.getAttribute('href');
+            if (href === '#top') {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            var target = document.querySelector(href);
             if (target) {
+                e.preventDefault();
                 window.scrollTo({ top: target.offsetTop - 72, behavior: 'smooth' });
             }
         });

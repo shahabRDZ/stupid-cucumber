@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact — Shahab Rashidian Dezfuly</title>
+    <meta name="description" content="Get in touch with Shahab Rashidian Dezfuly. Available for remote work, collaboration, and open-source projects.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://shahabrdz.dev/contact.html">
+
+    <meta property="og:title" content="Contact — Shahab Rashidian Dezfuly">
+    <meta property="og:description" content="Available for remote work, collaboration, and open-source projects.">
+    <meta property="og:url" content="https://shahabrdz.dev/contact.html">
+    <meta property="og:type" content="website">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body id="top">
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <div class="header__inner">
+            <a href="index.html" class="header__logo">shahab.</a>
+            <nav class="nav" id="nav">
+                <a href="about.html" class="nav__link"><span data-i18n="nav_about">about</span></a>
+                <a href="projects.html" class="nav__link"><span data-i18n="nav_portfolio">projects</span></a>
+                <a href="publications.html" class="nav__link"><span data-i18n="nav_publications">publications</span></a>
+                <a href="contact.html" class="nav__link nav__link--active"><span data-i18n="nav_contact">contact</span></a>
+                <div class="lang-switch lang-switch--mobile">
+                    <button class="lang-btn lang-btn--active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="tr">TR</button>
+                    <button class="lang-btn" data-lang="ar">AR</button>
+                </div>
+            </nav>
+            <div class="header__social">
+                <a href="https://www.linkedin.com/in/shahab-rashidian-17647a166/" target="_blank" rel="noopener" class="header__social-link"><i class="fab fa-linkedin-in"></i></a>
+                <a href="https://github.com/shahabRDZ" target="_blank" rel="noopener" class="header__social-link"><i class="fab fa-github"></i></a>
+            </div>
+            <div class="header__controls">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                    <i class="fas fa-sun"></i>
+                </button>
+                <div class="lang-switch" id="langSwitch">
+                    <button class="lang-btn lang-btn--active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="tr">TR</button>
+                    <button class="lang-btn" data-lang="ar">AR</button>
+                </div>
+            </div>
+            <button class="nav-toggle" id="navToggle" aria-label="Menu">
+                <span class="nav-toggle__bar"></span>
+                <span class="nav-toggle__bar"></span>
+                <span class="nav-toggle__bar"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== PAGE HERO ===== -->
+    <section class="page-hero">
+        <h1 class="page-hero__title">Get in Touch</h1>
+        <p class="page-hero__sub">Have a project in mind, want to collaborate, or just say hello? I'm always open to discussing new ideas, <strong>remote opportunities</strong>, and <strong>open-source contributions</strong>.</p>
+    </section>
+
+    <!-- ===== CONTENT ===== -->
+    <div class="page-content">
+        <div class="contact-wrap">
+            <!-- Message form -->
+            <form class="contact-form" action="#" method="POST" id="contactForm" onsubmit="return sendForm(event)">
+                <h3 class="contact-form__title" data-i18n="contact_form_title">Send me a message</h3>
+                <div class="contact-form__row">
+                    <div class="contact-form__field">
+                        <label for="name" data-i18n="contact_name">Name</label>
+                        <input type="text" id="name" name="name" data-i18n-placeholder="contact_name_ph" placeholder="Your name" required>
+                    </div>
+                    <div class="contact-form__field">
+                        <label for="email" data-i18n="contact_email">Email</label>
+                        <input type="email" id="email" name="email" data-i18n-placeholder="contact_email_ph" placeholder="your@email.com" required>
+                    </div>
+                </div>
+                <div class="contact-form__field">
+                    <label for="subject" data-i18n="contact_subject">Subject</label>
+                    <input type="text" id="subject" name="subject" data-i18n-placeholder="contact_subject_ph" placeholder="What's this about?">
+                </div>
+                <div class="contact-form__field">
+                    <label for="message" data-i18n="contact_message">Message</label>
+                    <textarea id="message" name="message" rows="5" data-i18n-placeholder="contact_message_ph" placeholder="Write your message here..." required></textarea>
+                </div>
+                <button type="submit" class="contact-form__btn">
+                    <span data-i18n="contact_send">Send Message</span> <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+
+            <!-- Social links -->
+            <div class="contact-side">
+                <h3 class="contact-side__title" data-i18n="contact_or">Or find me here</h3>
+                <a href="https://www.linkedin.com/in/shahab-rashidian-17647a166/" target="_blank" rel="noopener" class="contact-side__link">
+                    <i class="fab fa-linkedin-in"></i>
+                    <div>
+                        <strong>LinkedIn</strong>
+                        <span data-i18n="contact_linkedin">Let's connect</span>
+                    </div>
+                </a>
+                <a href="https://github.com/shahabRDZ" target="_blank" rel="noopener" class="contact-side__link">
+                    <i class="fab fa-github"></i>
+                    <div>
+                        <strong>GitHub</strong>
+                        <span data-i18n="contact_github">See my code</span>
+                    </div>
+                </a>
+                <a href="mailto:rashidian.shahab@gmail.com" class="contact-side__link">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <strong>Email</strong>
+                        <span>rashidian.shahab@gmail.com</span>
+                    </div>
+                </a>
+                <div class="contact-side__note">
+                    <i class="fas fa-globe"></i>
+                    <p data-i18n="contact_remote">Available for <strong>remote work</strong> worldwide and eager to contribute to <strong>volunteer &amp; open-source projects</strong>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="footer__inner">
+            <a href="index.html" class="footer__left">&copy; 2026 Shahab Rashidian Dezfuly</a>
+            <nav class="footer__nav">
+                <a href="about.html">about</a>
+                <a href="projects.html">projects</a>
+                <a href="publications.html">publications</a>
+                <a href="contact.html">contact</a>
+            </nav>
+        </div>
+        <a href="#top" class="footer__top" aria-label="Back to top"><i class="fas fa-chevron-up"></i></a>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+    function sendForm(e) {
+        e.preventDefault();
+        var name = document.getElementById('name').value;
+        var email = document.getElementById('email').value;
+        var subject = document.getElementById('subject').value;
+        var message = document.getElementById('message').value;
+
+        var body = 'Name: ' + name + '%0D%0AEmail: ' + email + '%0D%0A%0D%0A' + message;
+        var mailto = 'mailto:rashidian.shahab@gmail.com?subject=' + encodeURIComponent(subject || 'Message from shahabrdz.dev') + '&body=' + body;
+
+        window.open(mailto, '_blank');
+
+        var btn = document.querySelector('.contact-form__btn');
+        var originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Opening email client...';
+        btn.style.background = '#38d9a9';
+
+        setTimeout(function() {
+            btn.innerHTML = originalText;
+            btn.style.background = '';
+            document.getElementById('contactForm').reset();
+        }, 3000);
+
+        return false;
+    }
+    </script>
+</body>
+</html>

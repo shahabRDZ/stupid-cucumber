@@ -65,9 +65,10 @@
             <a href="#top" class="header__logo">shahab.</a>
 
             <nav class="nav" id="nav">
-                <a href="#about" class="nav__link"><span data-i18n="nav_about">about</span></a>
-                <a href="#work" class="nav__link"><span data-i18n="nav_portfolio">portfolio</span></a>
-                <a href="#contact" class="nav__link"><span data-i18n="nav_contact">contact</span></a>
+                <a href="about.html" class="nav__link"><span data-i18n="nav_about">about</span></a>
+                <a href="projects.html" class="nav__link"><span data-i18n="nav_portfolio">projects</span></a>
+                <a href="publications.html" class="nav__link"><span data-i18n="nav_publications">publications</span></a>
+                <a href="contact.html" class="nav__link"><span data-i18n="nav_contact">contact</span></a>
                 <div class="lang-switch lang-switch--mobile">
                     <button class="lang-btn lang-btn--active" data-lang="en">EN</button>
                     <button class="lang-btn" data-lang="tr">TR</button>
@@ -218,216 +219,31 @@
     </section>
 
 
-    <!-- ===== ABOUT — Card grid ===== -->
-    <section class="section section--dark" id="about">
+    <!-- ===== EXPLORE — CTA grid linking to pages ===== -->
+    <section class="section section--dark" id="explore">
         <div class="section__header">
             <div class="section__line"></div>
-            <h2 class="section__title" data-i18n="section_about">A few things about me</h2>
+            <h2 class="section__title">Explore</h2>
         </div>
 
-        <div class="card-grid">
-            <a href="#work" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                    <i class="fas fa-server card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title" data-i18n="card_backend">Backend &amp; Cloud</h3>
-                    <p class="card__sub" data-i18n="card_backend_sub">Python, PHP, ASP.NET, AWS, Docker</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
+        <div class="cta-grid">
+            <a href="about.html" class="cta-card">
+                <div class="cta-card__icon"><i class="fas fa-user-astronaut"></i></div>
+                <h3 class="cta-card__title">About Me</h3>
+                <p class="cta-card__sub">Skills, education at Sharif University, and professional experience in backend, cloud &amp; mobile development.</p>
             </a>
 
-            <a href="#work" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
-                    <i class="fas fa-layer-group card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title" data-i18n="card_fullstack">Full Stack</h3>
-                    <p class="card__sub" data-i18n="card_fullstack_sub">End-to-end from database to UI</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
+            <a href="projects.html" class="cta-card">
+                <div class="cta-card__icon"><i class="fas fa-code"></i></div>
+                <h3 class="cta-card__title">Projects</h3>
+                <p class="cta-card__sub">AWS infrastructure, microservices, REST APIs, Flutter apps, and more &mdash; with full technical breakdowns.</p>
             </a>
 
-            <a href="#work" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
-                    <i class="fas fa-mobile-screen-button card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title" data-i18n="card_mobile">Mobile &amp; Flutter</h3>
-                    <p class="card__sub" data-i18n="card_mobile_sub">Cross-platform apps, native feel</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
+            <a href="publications.html" class="cta-card">
+                <div class="cta-card__icon"><i class="fas fa-flask"></i></div>
+                <h3 class="cta-card__title">Publications</h3>
+                <p class="cta-card__sub">Research papers on wireless sensor networks, big data analytics, and the impact of virtual networks on society.</p>
             </a>
-
-            <a href="https://www.linkedin.com/in/shahab-rashidian-17647a166/" target="_blank" rel="noopener" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
-                    <i class="fas fa-graduation-cap card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title" data-i18n="card_uni">Sharif University</h3>
-                    <p class="card__sub" data-i18n="card_uni_sub">B.Sc. Computer Engineering, GPA 17.54/20</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-
-            <a href="#work" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #fa709a, #fee140);">
-                    <i class="fas fa-infinity card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title" data-i18n="card_devops">DevOps &amp; CI/CD</h3>
-                    <p class="card__sub" data-i18n="card_devops_sub">Docker, pipelines, infrastructure as code</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-
-            <a href="#work" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">
-                    <i class="fas fa-wand-magic-sparkles card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title" data-i18n="card_vibe">Vibe Coding &amp; AI</h3>
-                    <p class="card__sub" data-i18n="card_vibe_sub">AI-assisted dev, rapid prototyping</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-        </div>
-    </section>
-
-
-    <!-- ===== PORTFOLIO — Projects ===== -->
-    <section class="section" id="work">
-        <div class="section__header">
-            <div class="section__line"></div>
-            <h2 class="section__title" data-i18n="section_work">Some of my latest work</h2>
-        </div>
-
-        <div class="card-grid">
-            <a href="https://github.com/shahabRDZ/aws-cloud-infra" target="_blank" rel="noopener" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #FF9900, #232F3E);">
-                    <i class="fas fa-cloud card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title">AWS Cloud Infrastructure</h3>
-                    <p class="card__sub">Terraform, VPC, ECS Fargate, RDS, ALB, CloudWatch</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-
-            <a href="https://github.com/shahabRDZ/fastapi-auth-service" target="_blank" rel="noopener" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #009688, #00BCD4);">
-                    <i class="fas fa-lock card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title">Auth Microservice</h3>
-                    <p class="card__sub">FastAPI, JWT, PostgreSQL, Redis, Docker</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-
-            <a href="https://github.com/shahabRDZ/ecommerce-api" target="_blank" rel="noopener" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                    <i class="fas fa-cart-shopping card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title">E-Commerce API</h3>
-                    <p class="card__sub">Full-stack REST API, Stripe, PostgreSQL, Docker</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-
-            <a href="https://github.com/shahabRDZ/flutter-expense-tracker" target="_blank" rel="noopener" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
-                    <i class="fas fa-mobile-screen-button card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title">Expense Tracker App</h3>
-                    <p class="card__sub">Flutter, BLoC, SQLite, Charts, Material 3</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-
-            <a href="https://github.com/shahabRDZ/GAME.Mafia" target="_blank" rel="noopener" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #ff0844, #ffb199);">
-                    <i class="fas fa-masks-theater card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title">Mafia Party Game</h3>
-                    <p class="card__sub">Real-time multiplayer web app, Docker</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-
-            <a href="https://github.com/shahabRDZ/HD-desk" target="_blank" rel="noopener" class="card">
-                <div class="card__thumb card__thumb--gradient" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
-                    <i class="fas fa-headset card__thumb-icon"></i>
-                </div>
-                <div class="card__body">
-                    <h3 class="card__title">HDesk Ticketing</h3>
-                    <p class="card__sub">Help desk &amp; support platform</p>
-                </div>
-                <div class="card__arrow"><i class="fas fa-arrow-right"></i></div>
-            </a>
-        </div>
-    </section>
-
-
-    <!-- ===== CONTACT ===== -->
-    <section class="section section--dark" id="contact">
-        <div class="section__header">
-            <div class="section__line"></div>
-            <h2 class="section__title" data-i18n="section_contact">Get in touch</h2>
-        </div>
-
-        <div class="contact-wrap">
-            <!-- Message form -->
-            <form class="contact-form" action="#" method="POST" id="contactForm" onsubmit="return sendForm(event)">
-                <h3 class="contact-form__title" data-i18n="contact_form_title">Send me a message</h3>
-                <div class="contact-form__row">
-                    <div class="contact-form__field">
-                        <label for="name" data-i18n="contact_name">Name</label>
-                        <input type="text" id="name" name="name" data-i18n-placeholder="contact_name_ph" placeholder="Your name" required>
-                    </div>
-                    <div class="contact-form__field">
-                        <label for="email" data-i18n="contact_email">Email</label>
-                        <input type="email" id="email" name="email" data-i18n-placeholder="contact_email_ph" placeholder="your@email.com" required>
-                    </div>
-                </div>
-                <div class="contact-form__field">
-                    <label for="subject" data-i18n="contact_subject">Subject</label>
-                    <input type="text" id="subject" name="subject" data-i18n-placeholder="contact_subject_ph" placeholder="What's this about?">
-                </div>
-                <div class="contact-form__field">
-                    <label for="message" data-i18n="contact_message">Message</label>
-                    <textarea id="message" name="message" rows="5" data-i18n-placeholder="contact_message_ph" placeholder="Write your message here..." required></textarea>
-                </div>
-                <button type="submit" class="contact-form__btn">
-                    <span data-i18n="contact_send">Send Message</span> <i class="fas fa-paper-plane"></i>
-                </button>
-            </form>
-
-            <!-- Social links -->
-            <div class="contact-side">
-                <h3 class="contact-side__title" data-i18n="contact_or">Or find me here</h3>
-                <a href="https://www.linkedin.com/in/shahab-rashidian-17647a166/" target="_blank" rel="noopener" class="contact-side__link">
-                    <i class="fab fa-linkedin-in"></i>
-                    <div>
-                        <strong>LinkedIn</strong>
-                        <span data-i18n="contact_linkedin">Let's connect</span>
-                    </div>
-                </a>
-                <a href="https://github.com/shahabRDZ" target="_blank" rel="noopener" class="contact-side__link">
-                    <i class="fab fa-github"></i>
-                    <div>
-                        <strong>GitHub</strong>
-                        <span data-i18n="contact_github">See my code</span>
-                    </div>
-                </a>
-                <div class="contact-side__note">
-                    <i class="fas fa-globe"></i>
-                    <p data-i18n="contact_remote">Available for <strong>remote work</strong> worldwide and eager to contribute to <strong>volunteer &amp; open-source projects</strong>.</p>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -471,9 +287,10 @@
         <div class="footer__inner">
             <a href="#top" class="footer__left" data-i18n="footer_copy">&copy; 2026 Shahab Rashidian Dezfuly</a>
             <nav class="footer__nav">
-                <a href="#about" data-i18n="nav_about">about</a>
-                <a href="#work" data-i18n="nav_portfolio">portfolio</a>
-                <a href="#contact" data-i18n="nav_contact">contact</a>
+                <a href="about.html">about</a>
+                <a href="projects.html">projects</a>
+                <a href="publications.html">publications</a>
+                <a href="contact.html">contact</a>
             </nav>
         </div>
         <a href="#top" class="footer__top" aria-label="Back to top"><i class="fas fa-chevron-up"></i></a>
@@ -482,34 +299,6 @@
     <script src="js/hero.js"></script>
     <script src="js/app.js"></script>
 
-    <script>
-    function sendForm(e) {
-        e.preventDefault();
-        var name = document.getElementById('name').value;
-        var email = document.getElementById('email').value;
-        var subject = document.getElementById('subject').value;
-        var message = document.getElementById('message').value;
-
-        var body = 'Name: ' + name + '%0D%0AEmail: ' + email + '%0D%0A%0D%0A' + message;
-        var mailto = 'mailto:rashidian.shahab@gmail.com?subject=' + encodeURIComponent(subject || 'Message from shahabrdz.dev') + '&body=' + body;
-
-        window.open(mailto, '_blank');
-
-        // Show success message
-        var btn = document.querySelector('.contact-form__btn');
-        var originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check"></i> Opening email client...';
-        btn.style.background = '#38d9a9';
-
-        setTimeout(function() {
-            btn.innerHTML = originalText;
-            btn.style.background = '';
-            document.getElementById('contactForm').reset();
-        }, 3000);
-
-        return false;
-    }
-    </script>
 
 </body>
 </html>
