@@ -109,6 +109,12 @@ CREATE TABLE IF NOT EXISTS price_alerts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     triggered_at TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS signal_messages (
+    signal_id INTEGER,
+    channel TEXT,
+    message_id INTEGER,
+    PRIMARY KEY (signal_id, channel)
+);
 """
 
 _DEFAULT_SETTINGS = {
@@ -117,6 +123,8 @@ _DEFAULT_SETTINGS = {
     "approval_mode": "0",
     "target_channel": "",
     "chart_enabled": "1",
+    "signal_counter": "0",
+    "cta_interval": "5",
     "message_template": "━━━━━━━━━━━━━━━━━━━━\n{signal}\n━━━━━━━━━━━━━━━━━━━━\n📅 {time}\n📡 Signal Bot",
 }
 
@@ -258,6 +266,38 @@ class SignalRepository(BaseRepository):
                 "UPDATE signals SET sent_to_bot=1, sent_count=? WHERE id=?",
                 (sent_count, signal_id),
             )
+
+    def update_status(self, signal_id: int, status: str) -> None:
+        with self._db.session() as conn:
+            conn.execute("UPDATE signals SET status=? WHERE id=?", (status, signal_id))
+
+    def get_today(self) -> list[Signal]:
+        with self._db.session() as conn:
+            rows = conn.execute(
+                "SELECT * FROM signals WHERE date(created_at)=date('now') ORDER BY created_at DESC",
+            ).fetchall()
+            return [Signal(**dict(r)) for r in rows]
+
+    def get_by_pair_recent(self, pair: str, limit: int = 1) -> list[Signal]:
+        with self._db.session() as conn:
+            rows = conn.execute(
+                "SELECT * FROM signals WHERE pair=? AND status='active' ORDER BY created_at DESC LIMIT ?",
+                (pair, limit),
+            ).fetchall()
+            return [Signal(**dict(r)) for r in rows]
+
+    def win_loss_stats(self, days: int = 7) -> dict:
+        with self._db.session() as conn:
+            total = conn.execute(
+                f"SELECT COUNT(*) as c FROM signals WHERE created_at >= datetime('now', '-{days} days')",
+            ).fetchone()["c"]
+            wins = conn.execute(
+                f"SELECT COUNT(*) as c FROM signals WHERE status='tp_hit' AND created_at >= datetime('now', '-{days} days')",
+            ).fetchone()["c"]
+            losses = conn.execute(
+                f"SELECT COUNT(*) as c FROM signals WHERE status='sl_hit' AND created_at >= datetime('now', '-{days} days')",
+            ).fetchone()["c"]
+            return {"total": total, "wins": wins, "losses": losses, "active": total - wins - losses}
 
 
 # --- subscribers ---
@@ -467,3 +507,30 @@ class AlertRepository(BaseRepository):
                 (alert_id, chat_id),
             )
             return cur.rowcount > 0
+
+
+# --- signal messages (track channel msg ids for editing) ---
+
+class SignalMessageRepository(BaseRepository):
+
+    def save(self, signal_id: int, channel: str, message_id: int):
+        with self._db.session() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO signal_messages (signal_id, channel, message_id) VALUES (?, ?, ?)",
+                (signal_id, channel, message_id),
+            )
+
+    def get_message_id(self, signal_id: int, channel: str) -> int | None:
+        with self._db.session() as conn:
+            row = conn.execute(
+                "SELECT message_id FROM signal_messages WHERE signal_id=? AND channel=?",
+                (signal_id, channel),
+            ).fetchone()
+            return row["message_id"] if row else None
+
+    def get_by_signal(self, signal_id: int) -> list[dict]:
+        with self._db.session() as conn:
+            rows = conn.execute(
+                "SELECT * FROM signal_messages WHERE signal_id=?", (signal_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]

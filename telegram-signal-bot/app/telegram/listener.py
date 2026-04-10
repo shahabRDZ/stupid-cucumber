@@ -13,8 +13,11 @@ from app.models import ParsedSignal
 from app.parser import SignalParser
 from app.telegram.base import BaseTelegramClient
 
+import re
+
 SignalCallback = Callable[[int, str, object, str], Awaitable[None]]
 MessageCallback = Callable[[dict], Awaitable[None]]
+UpdateCallback = Callable[[int, str, str], Awaitable[None]]  # signal_id, update_text, status
 
 
 class ChannelListener(BaseTelegramClient):
@@ -39,9 +42,13 @@ class ChannelListener(BaseTelegramClient):
 
         self._on_signal: SignalCallback | None = None
         self._on_message: MessageCallback | None = None
+        self._on_update: UpdateCallback | None = None
 
     def on_signal(self, callback: SignalCallback) -> None:
         self._on_signal = callback
+
+    def on_update(self, callback: UpdateCallback) -> None:
+        self._on_update = callback
 
     def on_message(self, callback: MessageCallback) -> None:
         self._on_message = callback
@@ -94,6 +101,31 @@ class ChannelListener(BaseTelegramClient):
                     "id": raw_id, "channel": username,
                     "text": raw_text[:200], "is_signal": is_sig,
                 })
+
+            # detect TP/SL hit updates
+            lower = raw_text.lower()
+            tp_hit = bool(re.search(r"(tp\d?\s*(hit|reached|done|✅)|take profit.*hit|target.*hit)", lower))
+            sl_hit = bool(re.search(r"(sl\s*(hit|reached|done|❌)|stop loss.*hit|stopped out)", lower))
+
+            if (tp_hit or sl_hit) and self._on_update:
+                pair = self._parser._detect_pair(raw_text)
+                if pair:
+                    recent = self._signals.get_by_pair_recent(pair)
+                    if recent:
+                        sig = recent[0]
+                        if tp_hit:
+                            status = "tp_hit"
+                            update_text = "✅ <b>TP HIT!</b>"
+                            tp_num = re.search(r"tp\s*(\d)", lower)
+                            if tp_num:
+                                update_text = f"✅ <b>TP{tp_num.group(1)} HIT!</b>"
+                        else:
+                            status = "sl_hit"
+                            update_text = "❌ <b>SL HIT</b>"
+
+                        self._signals.update_status(sig.id, status)
+                        await self._on_update(sig.id, update_text, status)
+                        self._logs.add("INFO", "listener", f"{pair} → {status}")
 
             if self._settings.filter_enabled and not is_sig:
                 return

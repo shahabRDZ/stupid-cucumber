@@ -16,7 +16,7 @@ class Config:
     default_channels: list[str]
 
     @classmethod
-    def from_env(cls, env_path: str | None = None) -> Config:
+    def from_env(cls, env_path=None) -> "Config":
         load_dotenv(env_path)
         raw_admins = os.getenv("ADMIN_IDS", os.getenv("ADMIN_ID", "0"))
         raw_channels = os.getenv("SOURCE_CHANNELS", "")
