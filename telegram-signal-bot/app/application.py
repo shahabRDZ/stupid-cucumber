@@ -226,7 +226,8 @@ class Application:
         if not ch:
             return False
         try:
-            await self._user_or_bot.delete_messages(ch, [message_id])
+            # bot client must delete (it's the channel admin)
+            await self.bot.client.delete_messages(ch, [message_id])
             self.logs.add("INFO", "app", f"Channel post #{message_id} deleted")
             logger.info(f"Deleted channel post #{message_id}")
             return True
@@ -243,7 +244,7 @@ class Application:
             async for msg in self._user_or_bot.iter_messages(ch, reply_to=post_id, limit=200):
                 ids.append(msg.id)
             if ids:
-                await self._user_or_bot.delete_messages(ch, ids)
+                await self.bot.client.delete_messages(ch, ids)
                 self.logs.add("INFO", "app", f"Deleted {len(ids)} comments from post #{post_id}")
             return len(ids)
         except Exception as exc:
