@@ -63,26 +63,35 @@ class ChannelManager:
 
     # --- send signal to channel with all features ---
 
+    def _bot_username(self) -> str:
+        return self._settings.get("bot_username", "AcademySignalbot")
+
+    def _channel_username(self) -> str:
+        return self._settings.get("channel_username", "AcademySignalsss")
+
     async def send_signal(self, signal_id: int, formatted_text: str, pair: str = "", chart: bytes = None):
         ch = self._channel
         if not ch:
             return
 
         num = self._next_signal_number()
+        bot_un = self._bot_username()
+        ch_un = self._channel_username()
 
-        # build message with branding
-        header = f"📡 <b>Signal #{num}</b>\n\n"
-        footer = (
-            f"\n\n💬 Details → @AcademySignalbot"
-            f"\n📺 Channel → @AcademySignalsss"
-        )
+        # build message with branding from DB
+        header_tpl = self._settings.get("channel_signal_header", "📡 <b>Signal #{num}</b>")
+        header = header_tpl.replace("{num}", str(num)) + "\n\n"
+
+        footer_tpl = self._settings.get("channel_signal_footer", "💬 Details → @{bot}\n📺 Channel → @{channel}")
+        footer = "\n\n" + footer_tpl.replace("{bot}", bot_un).replace("{channel}", ch_un)
+
         full_msg = header + formatted_text + footer
 
         # inline buttons
         buttons = [
             [
-                Button.url("📊 Open Bot", "https://t.me/AcademySignalbot"),
-                Button.url("📺 Channel", "https://t.me/AcademySignalsss"),
+                Button.url("📊 Open Bot", f"https://t.me/{bot_un}"),
+                Button.url("📺 Channel", f"https://t.me/{ch_un}"),
             ]
         ]
 
@@ -123,13 +132,11 @@ class ChannelManager:
             # CTA every N signals
             if self._should_send_cta():
                 await asyncio.sleep(2)
-                cta = (
-                    "━━━━━━━━━━━━━━━━━━━━\n"
-                    "🤖 <b>Want more features?</b>\n\n"
-                    "💹 Live prices\n📅 Economic calendar\n🔔 Price alerts\n🧭 Market sentiment\n\n"
-                    "👉 @AcademySignalbot\n"
-                    "━━━━━━━━━━━━━━━━━━━━"
-                )
+                cta_tpl = self._settings.get("channel_cta", "")
+                if cta_tpl:
+                    cta = cta_tpl.replace("{bot}", bot_un).replace("{channel}", ch_un)
+                else:
+                    cta = f"🤖 <b>Want more features?</b>\n\n👉 @{bot_un}"
                 await self._bot.send_message(ch, cta, parse_mode="html")
 
             logger.info(f"Channel signal #{num} sent to {ch}")
@@ -233,7 +240,10 @@ class ChannelManager:
             rate = round(stats['wins'] / (stats['wins'] + stats['losses']) * 100, 1)
             msg += f"📊 Win Rate: {rate}%\n"
 
-        msg += f"\n💬 @AcademySignalbot | 📺 @AcademySignalsss"
+        bot_un = self._bot_username()
+        ch_un = self._channel_username()
+        summary_footer = self._settings.get("daily_summary_footer", "💬 @{bot} | 📺 @{channel}")
+        msg += "\n" + summary_footer.replace("{bot}", bot_un).replace("{channel}", ch_un)
 
         try:
             sent = await self._bot.send_message(ch, msg, parse_mode="html")
@@ -263,7 +273,7 @@ class ChannelManager:
             f"✅ Wins: {stats['wins']}\n"
             f"❌ Losses: {stats['losses']}\n"
             f"📈 Win Rate: {win_rate}%\n"
-            f"\n🤖 @AcademySignalbot"
+            f"\n🤖 @{self._bot_username()}"
         )
         try:
             await self._bot.send_message(ch, msg, parse_mode="html")
@@ -292,7 +302,7 @@ class ChannelManager:
             f"✅ Wins: {stats['wins']}\n"
             f"❌ Losses: {stats['losses']}\n"
             f"📈 Win Rate: {win_rate}%\n"
-            f"\n🤖 @AcademySignalbot | 📺 @AcademySignalsss"
+            f"\n🤖 @{self._bot_username()} | 📺 @{self._channel_username()}"
         )
         try:
             await self._bot.send_message(ch, msg, parse_mode="html")

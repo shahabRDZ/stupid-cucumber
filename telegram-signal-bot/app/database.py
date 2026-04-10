@@ -137,6 +137,11 @@ _DEFAULT_SETTINGS = {
     "help_tr": "<b>Komutlar:</b>\n/start - Abone ol\n/stop - Çık\n/price - Canlı fiyat\n/calendar - Ekonomik takvim\n/sentiment - Piyasa duyarlılığı\n/alert - Fiyat alarmı\n/myalerts - Alarmlarım",
     "signal_footer": "💬 @AcademySignalbot | 📺 @AcademySignalsss",
     "channel_cta": "🤖 <b>Want more features?</b>\n\n💹 Live prices\n📅 Economic calendar\n🔔 Price alerts\n🧭 Market sentiment\n\n👉 @AcademySignalbot",
+    "bot_username": "AcademySignalbot",
+    "channel_username": "AcademySignalsss",
+    "channel_signal_header": "📡 <b>Signal #{num}</b>",
+    "channel_signal_footer": "💬 Details → @{bot}\n📺 Channel → @{channel}",
+    "daily_summary_footer": "💬 @{bot} | 📺 @{channel}",
 }
 
 

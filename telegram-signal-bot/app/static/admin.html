@@ -363,8 +363,17 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
         <div class="form-group"><label>Help — Türkçe</label><textarea id="txt-help_tr" dir="ltr"></textarea></div>
       </div></div>
       <div class="panel"><div class="panel-header"><h3>Signal & Channel</h3></div><div class="panel-body">
-        <div class="form-group"><label>Signal Footer</label><input id="txt-signal_footer" dir="ltr"></div>
-        <div class="form-group"><label>Channel CTA (promo message)</label><textarea id="txt-channel_cta" dir="ltr"></textarea></div>
+        <div class="form-group"><label>Signal Footer (bot)</label><input id="txt-signal_footer" dir="ltr"></div>
+        <div class="form-group"><label>Channel CTA (promo message) — {bot} {channel} placeholders</label><textarea id="txt-channel_cta" dir="ltr"></textarea></div>
+      </div></div>
+      <div class="panel"><div class="panel-header"><h3>Channel Branding</h3></div><div class="panel-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>Bot Username (without @)</label><input id="txt-bot_username" dir="ltr" placeholder="AcademySignalbot"></div>
+          <div class="form-group"><label>Channel Username (without @)</label><input id="txt-channel_username" dir="ltr" placeholder="AcademySignalsss"></div>
+        </div>
+        <div class="form-group"><label>Channel Signal Header — {num} = signal number</label><input id="txt-channel_signal_header" dir="ltr" placeholder="📡 Signal #{num}"></div>
+        <div class="form-group"><label>Channel Signal Footer — {bot} {channel} placeholders</label><input id="txt-channel_signal_footer" dir="ltr" placeholder="💬 Details → @{bot}"></div>
+        <div class="form-group"><label>Daily Summary Footer — {bot} {channel} placeholders</label><input id="txt-daily_summary_footer" dir="ltr" placeholder="💬 @{bot} | 📺 @{channel}"></div>
       </div></div>
       <button class="btn btn-primary" onclick="saveTexts()" style="margin-top:10px">Save All Texts</button>
     </div>
@@ -524,11 +533,11 @@ function logout(){localStorage.removeItem('token');location.reload()}
 // Texts
 async function loadTexts(){
   const t=await api('/api/texts');
-  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta'];
+  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta','bot_username','channel_username','channel_signal_header','channel_signal_footer','daily_summary_footer'];
   keys.forEach(k=>{const el=document.getElementById('txt-'+k);if(el)el.value=t[k]||''});
 }
 async function saveTexts(){
-  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta'];
+  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta','bot_username','channel_username','channel_signal_header','channel_signal_footer','daily_summary_footer'];
   const texts={};keys.forEach(k=>{const el=document.getElementById('txt-'+k);if(el)texts[k]=el.value});
   await api('/api/texts',{method:'PUT',body:JSON.stringify({texts})});
   alert('Texts saved!');
