@@ -37,9 +37,9 @@ def verify_token(token: str) -> bool:
 
 
 def _get_secret() -> str:
-    if JWT_SECRET_KEY:
-        return JWT_SECRET_KEY
-    return "fallback-change-me"
+    if not JWT_SECRET_KEY:
+        raise RuntimeError("JWT secret not initialized — call init_secret() first")
+    return JWT_SECRET_KEY
 
 
 def init_secret(password_hash: str) -> None:

@@ -145,4 +145,8 @@ class ChannelListener(BaseTelegramClient):
                 self._logs.add("INFO", "parser", f"Signal: {parsed.pair} {parsed.direction}")
 
                 if self._settings.send_enabled and self._on_signal:
-                    await self._on_signal(signal_id, formatted, event.message.media, parsed.pair)
+                    try:
+                        await self._on_signal(signal_id, formatted, event.message.media, parsed.pair)
+                    except Exception as exc:
+                        self._logger.error(f"Signal handler error (#{signal_id} {parsed.pair}): {exc}")
+                        self._logs.add("ERROR", "listener", f"Signal handler error: {exc}")

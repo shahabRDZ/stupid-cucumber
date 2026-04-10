@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from telethon import TelegramClient, events, Button
 
@@ -171,7 +171,7 @@ class ChannelManager:
         logger.info("Channel scheduler started")
         while self._running:
             try:
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
 
                 # market session alerts (check every minute)
                 await self._check_sessions(now)

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 
@@ -15,9 +16,27 @@ from app.telegram.base import BaseTelegramClient
 
 # fallback texts (used if not set in DB)
 _FALLBACK = {
-    "en": {"hello": "Hello", "choose_lang": "Choose your language:", "unsubscribed": "Unsubscribed. Send /start to re-subscribe."},
-    "fa": {"hello": "سلام", "choose_lang": "زبان خود را انتخاب کنید:", "unsubscribed": "عضویت لغو شد. برای مجدد /start بزنید."},
-    "tr": {"hello": "Merhaba", "choose_lang": "Dilinizi seçin:", "unsubscribed": "Abonelikten çıktınız. /start ile tekrar abone olun."},
+    "en": {
+        "hello": "Hello", "choose_lang": "Choose your language:",
+        "unsubscribed": "Unsubscribed. Send /start to re-subscribe.",
+        "welcome": "Welcome! You'll receive real-time forex signals.",
+        "subscribed": "You are now subscribed to signals!",
+        "help": "<b>Commands:</b>\n/start /stop /price /calendar /sentiment /alert /myalerts /calc",
+    },
+    "fa": {
+        "hello": "سلام", "choose_lang": "زبان خود را انتخاب کنید:",
+        "unsubscribed": "عضویت لغو شد. برای مجدد /start بزنید.",
+        "welcome": "به ربات سیگنال خوش آمدید!\nسیگنال‌ها به صورت لحظه‌ای ارسال می‌شوند.",
+        "subscribed": "عضویت شما فعال شد!",
+        "help": "<b>دستورات:</b>\n/start /stop /price /calendar /sentiment /alert /myalerts /calc",
+    },
+    "tr": {
+        "hello": "Merhaba", "choose_lang": "Dilinizi seçin:",
+        "unsubscribed": "Abonelikten çıktınız. /start ile tekrar abone olun.",
+        "welcome": "Sinyal botuna hoş geldiniz!\nSinyaller gerçek zamanlı gönderilecektir.",
+        "subscribed": "Aboneliğiniz aktif!",
+        "help": "<b>Komutlar:</b>\n/start /stop /price /calendar /sentiment /alert /myalerts /calc",
+    },
 }
 
 _LANGS = {"en": "English", "fa": "فارسی", "tr": "Türkçe"}
@@ -93,6 +112,7 @@ class SignalBot(BaseTelegramClient):
         self._market = market
         self._user_client = user_client
         self._alert_service = AlertService(alerts_repo, market)
+        self._pending_pairs: dict[int, str] = {}
 
     @property
     def alert_service(self) -> AlertService:
@@ -141,7 +161,6 @@ class SignalBot(BaseTelegramClient):
                     return False
                 # transient error → retry with backoff
                 if attempt < retries:
-                    import asyncio
                     wait = 1 * (attempt + 1)
                     self._logger.warning(f"Send retry {attempt+1}/{retries} → {chat_id}: {exc}")
                     await asyncio.sleep(wait)
@@ -205,8 +224,6 @@ class SignalBot(BaseTelegramClient):
                 self._logger.warning(f"Approval msg failed → {admin_id}: {exc}")
         # Store pair for later use when approved
         self._pending_pairs[signal_id] = pair
-
-    _pending_pairs: dict[int, str] = {}
 
     def _get_lang(self, chat_id: int) -> str:
         return self._subscribers.get_lang(chat_id)

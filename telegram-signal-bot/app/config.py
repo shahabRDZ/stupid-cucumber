@@ -42,10 +42,14 @@ class Config:
         raw_admins = os.getenv("ADMIN_IDS", os.getenv("ADMIN_ID", "0"))
         raw_channels = os.getenv("SOURCE_CHANNELS", "")
         plain_password = os.getenv("ADMIN_PASSWORD", "")
-        if not plain_password or plain_password in ("admin123", "123456", "password"):
-            print("WARNING: Set a strong ADMIN_PASSWORD in .env!", file=sys.stderr)
-            if not plain_password:
-                plain_password = "admin123"
+        if not plain_password:
+            missing.append("ADMIN_PASSWORD")
+        if missing:
+            print(f"FATAL: Missing required env vars: {', '.join(missing)}", file=sys.stderr)
+            print("Copy .env.example to .env and fill in values.", file=sys.stderr)
+            sys.exit(1)
+        if plain_password in ("admin123", "123456", "password", "admin"):
+            print("WARNING: ADMIN_PASSWORD is too weak! Change it.", file=sys.stderr)
 
         pwd_hash = hash_password(plain_password)
         init_secret(pwd_hash)
