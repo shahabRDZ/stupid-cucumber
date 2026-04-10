@@ -88,8 +88,10 @@ class Application:
             self.signal_msgs, self.subscribers, self.logs, self.market,
         )
 
-        # wire channel send from admin panel
+        # wire admin panel callbacks
         self.web.on_channel_send(self._send_to_channel)
+        self.web.on_bot_broadcast(self._broadcast_to_bot)
+        self.web.on_channel_delete(self._delete_channel_message)
 
         self.logs.add("INFO", "app", f"System ready — port {self._config.web_port}")
         logger.info(f"Dashboard : http://localhost:{self._config.web_port}")
@@ -137,6 +139,28 @@ class Application:
                 await self.bot.client.send_message(ch, text, parse_mode="html")
             except Exception as exc:
                 logger.error(f"Channel send: {exc}")
+
+    async def _broadcast_to_bot(self, text: str) -> int:
+        subs = self.subscribers.get_active()
+        sent = 0
+        for s in subs:
+            if await self.bot.send_to_user(s.chat_id, text):
+                sent += 1
+        self.logs.add("INFO", "app", f"Bot broadcast: {sent}/{len(subs)} subscribers")
+        return sent
+
+    async def _delete_channel_message(self, msg_type: str, item_id: int) -> None:
+        ch = self.settings.get("target_channel", "")
+        if not ch:
+            return
+        if msg_type == "signal":
+            msg_id = self.signal_msgs.get_message_id(item_id, ch)
+            if msg_id:
+                try:
+                    await self.bot.client.delete_messages(ch, [msg_id])
+                    logger.info(f"Deleted signal #{item_id} message from channel")
+                except Exception as exc:
+                    logger.warning(f"Channel delete failed: {exc}")
 
     async def _handle_message(self, msg_data: dict) -> None:
         await self.web.notify_message(msg_data)

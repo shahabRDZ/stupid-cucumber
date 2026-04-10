@@ -271,7 +271,7 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
     <div class="page" id="page-signals">
       <h2>Signals</h2>
       <div class="panel"><div class="panel-header"><h3>All Signals</h3></div><div class="panel-body"><div class="table-wrap">
-        <table><thead><tr><th>#</th><th>Pair</th><th>Dir</th><th>Entry</th><th>TP1</th><th>TP2</th><th>TP3</th><th>SL</th><th>Status</th><th>Sent</th><th>Time</th></tr></thead>
+        <table><thead><tr><th>#</th><th>Pair</th><th>Dir</th><th>Entry</th><th>TP1</th><th>TP2</th><th>TP3</th><th>SL</th><th>Status</th><th>Sent</th><th>Time</th><th>Actions</th></tr></thead>
         <tbody id="signals-table"></tbody></table>
       </div></div></div>
     </div>
@@ -280,7 +280,7 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
     <div class="page" id="page-messages">
       <h2>Raw Messages</h2>
       <div class="panel"><div class="panel-header"><h3>Received</h3></div><div class="panel-body"><div class="table-wrap">
-        <table><thead><tr><th>#</th><th>Channel</th><th>Signal?</th><th>Text</th><th>Time</th></tr></thead>
+        <table><thead><tr><th>#</th><th>Channel</th><th>Signal?</th><th>Text</th><th>Time</th><th>Actions</th></tr></thead>
         <tbody id="messages-table"></tbody></table>
       </div></div></div>
     </div>
@@ -381,9 +381,14 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
     <!-- Channel Manager -->
     <div class="page" id="page-chmanage">
       <h2>Channel Manager</h2>
-      <div class="panel"><div class="panel-header"><h3>Send Message to Channel</h3></div><div class="panel-body">
-        <div class="form-group"><label>Message (HTML supported)</label><textarea id="ch-msg-text" dir="ltr" placeholder="Write a message to send to the channel..."></textarea></div>
-        <button class="btn btn-primary" onclick="sendToChannel()">Send to Channel</button>
+      <div class="panel"><div class="panel-header"><h3>Send Message</h3></div><div class="panel-body">
+        <div class="form-group"><label>Message (HTML supported)</label><textarea id="ch-msg-text" dir="ltr" placeholder="Write a message..."></textarea></div>
+        <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px">
+          <label style="color:var(--text2);font-size:13px">Send to:</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="msg-to-channel" checked> 📺 Channel</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="msg-to-bot" checked> 🤖 Bot Subscribers</label>
+        </div>
+        <button class="btn btn-primary" onclick="sendMessage()">Send</button>
         <div id="ch-msg-result" style="margin-top:10px;color:var(--green);display:none"></div>
       </div></div>
       <div class="panel"><div class="panel-header"><h3>Send Manual Signal</h3></div><div class="panel-body">
@@ -395,7 +400,12 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
           <div class="form-group"><label>TP1</label><input id="ch-sig-tp1" placeholder="1.0900" dir="ltr"></div>
           <div class="form-group"><label>TP2</label><input id="ch-sig-tp2" placeholder="1.0950" dir="ltr"></div>
         </div>
-        <button class="btn btn-primary" onclick="sendManualSignal()" style="margin-top:10px">Send Signal</button>
+        <div style="display:flex;gap:16px;align-items:center;margin:12px 0">
+          <label style="color:var(--text2);font-size:13px">Send to:</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="sig-to-channel" checked> 📺 Channel</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="sig-to-bot" checked> 🤖 Bot Subscribers</label>
+        </div>
+        <button class="btn btn-primary" onclick="sendManualSignal()">Send Signal</button>
         <div id="ch-sig-result" style="margin-top:10px;color:var(--green);display:none"></div>
       </div></div>
     </div>
@@ -493,13 +503,13 @@ async function loadMarket(){
 // Signals
 async function loadSignals(){
   const sigs=await api('/api/signals?limit=100');
-  document.getElementById('signals-table').innerHTML=sigs.map(s=>`<tr><td>${s.id}</td><td><b>${s.pair}</b></td><td><span class="badge ${s.direction?.toLowerCase()}">${s.direction}</span></td><td dir="ltr">${s.entry_price||'-'}</td><td dir="ltr">${s.tp1||'-'}</td><td dir="ltr">${s.tp2||'-'}</td><td dir="ltr">${s.tp3||'-'}</td><td dir="ltr">${s.sl||'-'}</td><td><span class="badge ${s.status}">${s.status}</span></td><td>${s.sent_count||0}</td><td dir="ltr">${fTime(s.created_at)}</td></tr>`).join('');
+  document.getElementById('signals-table').innerHTML=sigs.map(s=>`<tr><td>${s.id}</td><td><b>${s.pair}</b></td><td><span class="badge ${s.direction?.toLowerCase()}">${s.direction}</span></td><td dir="ltr">${s.entry_price||'-'}</td><td dir="ltr">${s.tp1||'-'}</td><td dir="ltr">${s.tp2||'-'}</td><td dir="ltr">${s.tp3||'-'}</td><td dir="ltr">${s.sl||'-'}</td><td><span class="badge ${s.status}">${s.status}</span></td><td>${s.sent_count||0}</td><td dir="ltr">${fTime(s.created_at)}</td><td><button class="btn btn-sm btn-danger" onclick="deleteSignal(${s.id})">Delete</button></td></tr>`).join('');
 }
 
 // Messages
 async function loadMessages(){
   const msgs=await api('/api/messages?limit=100');
-  document.getElementById('messages-table').innerHTML=msgs.map(m=>`<tr><td>${m.id}</td><td dir="ltr">@${m.channel_username||'?'}</td><td>${m.is_signal?'<span class="badge signal">Signal</span>':'-'}</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr">${esc(m.text?.substring(0,120)||'')}</td><td dir="ltr">${fTime(m.created_at)}</td></tr>`).join('');
+  document.getElementById('messages-table').innerHTML=msgs.map(m=>`<tr><td>${m.id}</td><td dir="ltr">@${m.channel_username||'?'}</td><td>${m.is_signal?'<span class="badge signal">Signal</span>':'-'}</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr">${esc(m.text?.substring(0,120)||'')}</td><td dir="ltr">${fTime(m.created_at)}</td><td><button class="btn btn-sm btn-danger" onclick="deleteMessage(${m.id})">Delete</button></td></tr>`).join('');
 }
 
 // Channels
@@ -545,13 +555,24 @@ async function saveTexts(){
 
 // Channel Manager
 function loadChManage(){}
-async function sendToChannel(){
+function _getTargets(chId,botId){
+  const t=[];
+  if(document.getElementById(chId)?.checked)t.push('channel');
+  if(document.getElementById(botId)?.checked)t.push('bot');
+  return t;
+}
+async function sendMessage(){
   const text=document.getElementById('ch-msg-text').value.trim();
   if(!text)return;
-  await api('/api/channel/send',{method:'POST',body:JSON.stringify({text})});
-  const r=document.getElementById('ch-msg-result');r.textContent='Sent!';r.style.display='block';
+  const targets=_getTargets('msg-to-channel','msg-to-bot');
+  if(!targets.length)return alert('Select at least one target');
+  const res=await api('/api/channel/send',{method:'POST',body:JSON.stringify({text,targets})});
+  const parts=[];
+  if(res.channel)parts.push('📺 Channel');
+  if(res.bot_sent!==undefined)parts.push(`🤖 Bot (${res.bot_sent})`);
+  const r=document.getElementById('ch-msg-result');r.textContent='Sent → '+parts.join(' + ');r.style.display='block';
   document.getElementById('ch-msg-text').value='';
-  setTimeout(()=>r.style.display='none',3000);
+  setTimeout(()=>r.style.display='none',4000);
 }
 async function sendManualSignal(){
   const pair=document.getElementById('ch-sig-pair').value.trim().toUpperCase();
@@ -561,16 +582,25 @@ async function sendManualSignal(){
   const tp1=document.getElementById('ch-sig-tp1').value.trim();
   const tp2=document.getElementById('ch-sig-tp2').value.trim();
   if(!pair||!entry)return alert('Pair and Entry required');
-  const emoji=dir==='BUY'?'🟢':'🔴';
-  let msg='━━━━━━━━━━━━━━━━━━━━\n'+emoji+' <b>'+pair+' — '+dir+'</b>\n📍 Entry: <code>'+entry+'</code>\n';
-  if(tp1)msg+='🎯 TP1: <code>'+tp1+'</code>\n';
-  if(tp2)msg+='🎯 TP2: <code>'+tp2+'</code>\n';
-  if(sl)msg+='🛑 SL: <code>'+sl+'</code>\n';
-  msg+='━━━━━━━━━━━━━━━━━━━━';
-  await api('/api/channel/send',{method:'POST',body:JSON.stringify({text:msg})});
-  const r=document.getElementById('ch-sig-result');r.textContent='Signal sent!';r.style.display='block';
+  const targets=_getTargets('sig-to-channel','sig-to-bot');
+  if(!targets.length)return alert('Select at least one target');
+  const res=await api('/api/manual-signal',{method:'POST',body:JSON.stringify({pair,direction:dir,entry,sl,tp1,tp2,targets})});
+  const parts=[];
+  if(res.channel)parts.push('📺 Channel');
+  if(res.bot_sent!==undefined)parts.push(`🤖 Bot (${res.bot_sent})`);
+  const r=document.getElementById('ch-sig-result');r.textContent='Signal sent → '+parts.join(' + ');r.style.display='block';
   ['ch-sig-pair','ch-sig-entry','ch-sig-sl','ch-sig-tp1','ch-sig-tp2'].forEach(id=>document.getElementById(id).value='');
-  setTimeout(()=>r.style.display='none',3000);
+  setTimeout(()=>r.style.display='none',4000);
+}
+async function deleteSignal(id){
+  if(!confirm('Delete signal #'+id+'? (DB + channel)'))return;
+  await api('/api/signals/'+id,{method:'DELETE'});
+  loadSignals();loadDashboard();
+}
+async function deleteMessage(id){
+  if(!confirm('Delete message #'+id+'?'))return;
+  await api('/api/messages/'+id,{method:'DELETE'});
+  loadMessages();
 }
 async function saveSetting(k,v){await api('/api/settings',{method:'PUT',body:JSON.stringify({key:k,value:v})})}
 async function saveTemplate(){await saveSetting('message_template',document.getElementById('set-template').value);alert('Saved!')}

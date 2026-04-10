@@ -38,6 +38,8 @@ class WebServer:
         self._logger = logging.getLogger("WebServer")
         self.ws_manager = WebSocketManager()
         self._channel_send_callback = None
+        self._bot_broadcast_callback = None
+        self._channel_delete_callback = None
 
         self.app = FastAPI(title="Signal Bot API", version="2.0")
 
@@ -50,9 +52,24 @@ class WebServer:
     def on_channel_send(self, callback):
         self._channel_send_callback = callback
 
+    def on_bot_broadcast(self, callback):
+        self._bot_broadcast_callback = callback
+
+    def on_channel_delete(self, callback):
+        self._channel_delete_callback = callback
+
     async def send_to_channel(self, text: str):
         if self._channel_send_callback:
             await self._channel_send_callback(text)
+
+    async def send_to_bot(self, text: str) -> int:
+        if self._bot_broadcast_callback:
+            return await self._bot_broadcast_callback(text)
+        return 0
+
+    async def delete_channel_message(self, msg_type: str, item_id: int):
+        if self._channel_delete_callback:
+            await self._channel_delete_callback(msg_type, item_id)
 
         @self.app.websocket("/ws")
         async def _ws_endpoint(ws: WebSocket) -> None:

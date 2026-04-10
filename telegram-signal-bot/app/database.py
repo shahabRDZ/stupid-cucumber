@@ -232,6 +232,10 @@ class MessageRepository(BaseRepository):
         with self._db.session() as conn:
             return conn.execute("SELECT COUNT(*) AS c FROM raw_messages").fetchone()["c"]
 
+    def delete(self, message_id: int) -> None:
+        with self._db.session() as conn:
+            conn.execute("DELETE FROM raw_messages WHERE id=?", (message_id,))
+
 
 # --- signals ---
 
@@ -275,6 +279,11 @@ class SignalRepository(BaseRepository):
     def count(self) -> int:
         with self._db.session() as conn:
             return conn.execute("SELECT COUNT(*) AS c FROM signals").fetchone()["c"]
+
+    def delete(self, signal_id: int) -> None:
+        with self._db.session() as conn:
+            conn.execute("DELETE FROM signal_messages WHERE signal_id=?", (signal_id,))
+            conn.execute("DELETE FROM signals WHERE id=?", (signal_id,))
 
     def mark_sent(self, signal_id: int, sent_count: int) -> None:
         with self._db.session() as conn:

@@ -28,6 +28,16 @@ class LoginIn(BaseModel):
 
 class ChannelMessageIn(BaseModel):
     text: str
+    targets: list[str] = ["channel"]  # "channel", "bot", or both
+
+class ManualSignalIn(BaseModel):
+    pair: str
+    direction: str
+    entry: str
+    sl: str = ""
+    tp1: str = ""
+    tp2: str = ""
+    targets: list[str] = ["channel", "bot"]
 
 class TextsIn(BaseModel):
     texts: dict
@@ -263,12 +273,63 @@ def create_router(config: Config, repos: dict, market: MarketService, web_server
     @router.post("/api/channel/send")
     async def channel_send(data: ChannelMessageIn, request: Request):
         auth(request)
-        ch = settings.get("target_channel", "")
-        if not ch:
-            raise HTTPException(400, "No target channel set")
+        results = {}
+        if "channel" in data.targets:
+            ch = settings.get("target_channel", "")
+            if not ch:
+                raise HTTPException(400, "No target channel set")
+            if web_server:
+                await web_server.send_to_channel(data.text)
+            results["channel"] = ch
+        if "bot" in data.targets:
+            if web_server:
+                sent = await web_server.send_to_bot(data.text)
+                results["bot_sent"] = sent
+        logs.add("INFO", "api", f"Message sent → targets={data.targets}")
+        return {"status": "sent", **results}
+
+    @router.post("/api/manual-signal")
+    async def manual_signal(data: ManualSignalIn, request: Request):
+        auth(request)
+        emoji = "🟢" if data.direction == "BUY" else "🔴"
+        msg = f"━━━━━━━━━━━━━━━━━━━━\n{emoji} <b>{data.pair} — {data.direction}</b>\n📍 Entry: <code>{data.entry}</code>\n"
+        if data.tp1:
+            msg += f"🎯 TP1: <code>{data.tp1}</code>\n"
+        if data.tp2:
+            msg += f"🎯 TP2: <code>{data.tp2}</code>\n"
+        if data.sl:
+            msg += f"🛑 SL: <code>{data.sl}</code>\n"
+        msg += "━━━━━━━━━━━━━━━━━━━━"
+
+        results = {}
+        if "channel" in data.targets:
+            ch = settings.get("target_channel", "")
+            if ch and web_server:
+                await web_server.send_to_channel(msg)
+                results["channel"] = ch
+        if "bot" in data.targets:
+            if web_server:
+                sent = await web_server.send_to_bot(msg)
+                results["bot_sent"] = sent
+        logs.add("INFO", "api", f"Manual signal {data.pair} {data.direction} → {data.targets}")
+        return {"status": "sent", **results}
+
+    # --- delete ---
+
+    @router.delete("/api/signals/{signal_id}")
+    async def delete_signal(signal_id: int, request: Request):
+        auth(request)
         if web_server:
-            await web_server.send_to_channel(data.text)
-        logs.add("INFO", "api", f"Channel message sent to {ch}")
-        return {"status": "sent", "channel": ch}
+            await web_server.delete_channel_message("signal", signal_id)
+        signals.delete(signal_id)
+        logs.add("INFO", "api", f"Signal #{signal_id} deleted")
+        return {"status": "ok"}
+
+    @router.delete("/api/messages/{message_id}")
+    async def delete_message(message_id: int, request: Request):
+        auth(request)
+        messages.delete(message_id)
+        logs.add("INFO", "api", f"Message #{message_id} deleted")
+        return {"status": "ok"}
 
     return router
