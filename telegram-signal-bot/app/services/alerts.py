@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 import logging
 from typing import Callable, Awaitable
@@ -9,12 +7,10 @@ from app.services.market import MarketService
 
 logger = logging.getLogger(__name__)
 
-# Callback: (chat_id, pair, target_price, current_price, direction) -> None
 AlertCallback = Callable[[int, str, float, float, str], Awaitable[None]]
 
 
 class AlertService:
-    """Background service that monitors price alerts and triggers notifications."""
 
     CHECK_INTERVAL = 30  # seconds
 
@@ -58,7 +54,6 @@ class AlertService:
         if not active:
             return
 
-        # Group by pair to minimize API calls
         pairs = {a.pair for a in active}
         prices: dict[str, float] = {}
         for pair in pairs:

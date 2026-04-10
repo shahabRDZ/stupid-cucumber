@@ -1,12 +1,9 @@
-from __future__ import annotations
-
 from datetime import datetime
 
 from app.models import ParsedSignal
 
 
 class SignalFormatter:
-    """Formats a parsed signal into a styled Telegram message."""
 
     _DEFAULT_TEMPLATE = (
         "━━━━━━━━━━━━━━━━━━━━\n{signal}\n━━━━━━━━━━━━━━━━━━━━\n📅 {time}\n📡 Signal Bot"

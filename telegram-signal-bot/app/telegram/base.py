@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from abc import ABC, abstractmethod
 
@@ -9,7 +7,6 @@ from app.config import Config
 
 
 class BaseTelegramClient(ABC):
-    """Base class for Telegram clients (userbot & bot)."""
 
     def __init__(self, session_name: str, config: Config) -> None:
         self._config = config
@@ -40,9 +37,7 @@ class BaseTelegramClient(ABC):
             await self.connect()
 
     @abstractmethod
-    async def start(self) -> bool:
-        """Start the client and register handlers. Returns True on success."""
+    async def start(self) -> bool: ...
 
     @abstractmethod
-    def _register_handlers(self) -> None:
-        """Register event handlers on self._client."""
+    def _register_handlers(self) -> None: ...

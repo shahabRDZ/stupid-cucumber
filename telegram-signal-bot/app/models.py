@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 
@@ -83,7 +81,6 @@ class LogEntry:
 
 @dataclass
 class ParsedSignal:
-    """Intermediate result from the signal parser."""
     pair: str = ""
     direction: str = ""
     entry: str = ""

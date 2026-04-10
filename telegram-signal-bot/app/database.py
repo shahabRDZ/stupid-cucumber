@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import hashlib
 import logging
 import sqlite3
@@ -13,12 +11,7 @@ from app.models import (
 
 logger = logging.getLogger(__name__)
 
-# ──────────────────────────────────────────────
-#  Database connection manager
-# ──────────────────────────────────────────────
-
 class Database:
-    """Thin wrapper around SQLite for connection management."""
 
     def __init__(self, path: str) -> None:
         self._path = path
@@ -128,20 +121,13 @@ _DEFAULT_SETTINGS = {
 }
 
 
-# ──────────────────────────────────────────────
-#  Base repository
-# ──────────────────────────────────────────────
-
 class BaseRepository:
-    """Shared DB access for all repositories."""
 
     def __init__(self, db: Database) -> None:
         self._db = db
 
 
-# ──────────────────────────────────────────────
-#  Channel repository
-# ──────────────────────────────────────────────
+# --- channels ---
 
 class ChannelRepository(BaseRepository):
 
@@ -178,9 +164,7 @@ class ChannelRepository(BaseRepository):
             )
 
 
-# ──────────────────────────────────────────────
-#  Message repository
-# ──────────────────────────────────────────────
+# --- messages ---
 
 class MessageRepository(BaseRepository):
 
@@ -225,9 +209,7 @@ class MessageRepository(BaseRepository):
             return conn.execute("SELECT COUNT(*) AS c FROM raw_messages").fetchone()["c"]
 
 
-# ──────────────────────────────────────────────
-#  Signal repository
-# ──────────────────────────────────────────────
+# --- signals ---
 
 class SignalRepository(BaseRepository):
 
@@ -278,9 +260,7 @@ class SignalRepository(BaseRepository):
             )
 
 
-# ──────────────────────────────────────────────
-#  Subscriber repository
-# ──────────────────────────────────────────────
+# --- subscribers ---
 
 class SubscriberRepository(BaseRepository):
 
@@ -350,9 +330,7 @@ class SubscriberRepository(BaseRepository):
             conn.execute("UPDATE subscribers SET lang=? WHERE chat_id=?", (lang, chat_id))
 
 
-# ──────────────────────────────────────────────
-#  Settings repository
-# ──────────────────────────────────────────────
+# --- settings ---
 
 class SettingsRepository(BaseRepository):
 
@@ -381,9 +359,7 @@ class SettingsRepository(BaseRepository):
         return self.get("message_template")
 
 
-# ──────────────────────────────────────────────
-#  Log repository
-# ──────────────────────────────────────────────
+# --- logs ---
 
 class LogRepository(BaseRepository):
 
@@ -415,9 +391,7 @@ class LogRepository(BaseRepository):
             return conn.execute("SELECT COUNT(*) AS c FROM logs").fetchone()["c"]
 
 
-# ──────────────────────────────────────────────
-#  Stats (reads across repositories)
-# ──────────────────────────────────────────────
+# --- stats ---
 
 class StatsRepository(BaseRepository):
 
@@ -451,9 +425,7 @@ class StatsRepository(BaseRepository):
             )
 
 
-# ──────────────────────────────────────────────
-#  Alert repository
-# ──────────────────────────────────────────────
+# --- alerts ---
 
 class AlertRepository(BaseRepository):
 

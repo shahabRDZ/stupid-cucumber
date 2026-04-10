@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from datetime import datetime
 
@@ -13,7 +11,7 @@ from app.services.market import MarketService
 from app.services.alerts import AlertService
 from app.telegram.base import BaseTelegramClient
 
-# ── i18n ──
+# --- i18n ---
 
 _TEXTS = {
     "en": {
@@ -115,11 +113,7 @@ def _kb(lang: str):
     return _KEYBOARDS.get(lang, _KEYBOARDS["en"])
 
 
-# ── Bot class ─────────────────────────────────
-
-
 class SignalBot(BaseTelegramClient):
-    """Telegram bot: subscriber interactions + market features."""
 
     def __init__(
         self,
@@ -170,8 +164,6 @@ class SignalBot(BaseTelegramClient):
         )
         await self.send_to_user(chat_id, msg)
 
-    # ── sending ──
-
     async def send_to_user(self, chat_id: int, text: str, media=None) -> bool:
         try:
             if media:
@@ -219,7 +211,6 @@ class SignalBot(BaseTelegramClient):
         return sent
 
     async def send_approval_request(self, signal_id: int, text: str, pair: str = "") -> None:
-        """Send signal to admins for approval with Approve/Reject buttons."""
         buttons = [
             [
                 Button.inline("✅ Approve", data=f"approve_{signal_id}".encode()),
@@ -236,8 +227,6 @@ class SignalBot(BaseTelegramClient):
         self._pending_pairs[signal_id] = pair
 
     _pending_pairs: dict[int, str] = {}
-
-    # ── handlers ──
 
     def _register_handlers(self) -> None:
         cli = self._client
@@ -305,8 +294,6 @@ class SignalBot(BaseTelegramClient):
                 await event.delete()
                 await cli.send_message(event.chat_id, f"✅ Language: {_LANGS[code]}", buttons=_kb(code))
 
-        # ── Approval callbacks ──
-
         @cli.on(events.CallbackQuery(pattern=rb"approve_(\d+)"))
         async def _approve(event):
             if event.chat_id not in set(self._config.admin_ids):
@@ -338,8 +325,6 @@ class SignalBot(BaseTelegramClient):
             self._pending_pairs.pop(signal_id, None)
             await event.answer("❌ Rejected")
             await event.edit("❌ <b>REJECTED</b> — Signal was not sent.", parse_mode="html")
-
-        # ── Price command ──
 
         @cli.on(events.NewMessage(pattern=r"/price\s*(.*)"))
         async def _price(event):
@@ -375,8 +360,6 @@ class SignalBot(BaseTelegramClient):
             )
             await event.reply(msg, parse_mode="html", buttons=_kb(lang))
 
-        # ── Calendar command ──
-
         @cli.on(events.NewMessage(pattern="/calendar"))
         async def _calendar(event):
             lang = self._subscribers.get_lang(event.chat_id)
@@ -396,8 +379,6 @@ class SignalBot(BaseTelegramClient):
                 )
 
             await event.reply(msg, parse_mode="html", buttons=_kb(lang))
-
-        # ── Sentiment command ──
 
         @cli.on(events.NewMessage(pattern=r"/sentiment\s*(.*)"))
         async def _sentiment(event):
@@ -432,8 +413,6 @@ class SignalBot(BaseTelegramClient):
                 f"{icon} Trend: <b>{s.trend.upper()}</b>"
             )
             await event.reply(msg, parse_mode="html", buttons=_kb(lang))
-
-        # ── Alert commands ──
 
         @cli.on(events.NewMessage(pattern=r"/alert\s+(\S+)\s+(\S+)\s*(above|below)?"))
         async def _alert(event):
@@ -489,8 +468,6 @@ class SignalBot(BaseTelegramClient):
                 await event.reply(f"✅ Alert #{alert_id} deleted.", buttons=_kb(lang))
             else:
                 await event.reply(f"❌ Alert #{alert_id} not found.", buttons=_kb(lang))
-
-        # ── Button handlers ──
 
         @cli.on(events.NewMessage(func=lambda e: e.is_private and e.text in _SUBSCRIBE_BTNS))
         async def _btn_sub(event):
@@ -589,8 +566,6 @@ class SignalBot(BaseTelegramClient):
         async def _btn_alerts(event):
             await _myalerts(event)
 
-        # ── Admin commands ──
-
         admin_ids = set(self._config.admin_ids)
 
         @cli.on(events.NewMessage(pattern="/broadcast"))
@@ -612,8 +587,6 @@ class SignalBot(BaseTelegramClient):
             total, active = self._subscribers.count()
             await event.reply(f"👥 Active: {active} | Total: {total}")
 
-        # ── Fallback ──
-
         @cli.on(events.NewMessage(func=lambda e: e.is_private and not e.text.startswith("/")))
         async def _fallback(event):
             if event.text in _ALL_BTNS:
@@ -623,7 +596,6 @@ class SignalBot(BaseTelegramClient):
 
 
 def _format_signal_time(dt_str: str) -> str:
-    """Format datetime string to readable date + time."""
     try:
         from datetime import datetime as dt
         if "T" in dt_str:
@@ -636,7 +608,6 @@ def _format_signal_time(dt_str: str) -> str:
 
 
 def _sentiment_bar(buyers_pct: float) -> str:
-    """Create a visual bar: 🟩🟩🟩🟩⬜🟥🟥🟥🟥🟥"""
     total = 10
     green = round(buyers_pct / 10)
     red = total - green

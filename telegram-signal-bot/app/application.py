@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 import logging
 
@@ -20,15 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class Application:
-    """
-    Top-level orchestrator.
-    Wires together database, Telegram clients, market services, and web server.
-    """
 
     def __init__(self, config: Config) -> None:
         self._config = config
 
-        # ── database & repositories ──
         self._db = Database(config.db_path)
         self.channels = ChannelRepository(self._db)
         self.messages = MessageRepository(self._db)
@@ -50,10 +43,8 @@ class Application:
             "alerts": self.alerts,
         }
 
-        # ── services ──
         self.market = MarketService()
 
-        # ── telegram ──
         self.listener = ChannelListener(
             config, self.channels, self.messages,
             self.signals, self.settings, self.logs,
@@ -64,10 +55,7 @@ class Application:
             user_client=self.listener.client,
         )
 
-        # ── web ──
         self.web = WebServer(config, repos, self.market)
-
-    # ── lifecycle ──
 
     async def start(self) -> None:
         logger.info("Starting application...")
@@ -84,7 +72,7 @@ class Application:
                 self.channels.add(ch, ch)
                 logger.info(f"Seeded channel: @{ch}")
 
-        # Wire callbacks
+        # connect signal handlers
         self.listener.on_signal(self._handle_signal)
         self.listener.on_message(self._handle_message)
 
@@ -113,8 +101,6 @@ class Application:
         await self.bot.disconnect()
         logger.info("Application stopped")
 
-    # ── internal callbacks ──
-
     async def _handle_signal(self, signal_id: int, formatted: str, media, pair: str = "") -> None:
         approval_mode = self.settings.get("approval_mode", "0") == "1"
 
@@ -132,8 +118,6 @@ class Application:
 
     async def _handle_message(self, msg_data: dict) -> None:
         await self.web.notify_message(msg_data)
-
-    # ── runners ──
 
     async def _run_web(self) -> None:
         server = uvicorn.Server(uvicorn.Config(

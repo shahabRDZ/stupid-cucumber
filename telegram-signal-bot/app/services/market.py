@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 import time
 from dataclasses import dataclass
@@ -70,7 +68,6 @@ class SentimentData:
 
 
 class MarketService:
-    """Fetches live prices, economic calendar, and market sentiment."""
 
     # Yahoo Finance ticker mapping
     YAHOO_SYMBOLS = {
@@ -106,8 +103,6 @@ class MarketService:
     async def close(self) -> None:
         if self._session and not self._session.closed:
             await self._session.close()
-
-    # ── Live Prices ──────────────────────────────
 
     async def get_price(self, pair: str) -> PriceData | None:
         pair = pair.upper().replace("/", "")
@@ -167,8 +162,6 @@ class MarketService:
                 results.append(data)
         return results
 
-    # ── Economic Calendar ────────────────────────
-
     async def get_calendar(self, currency: str | None = None) -> list[CalendarEvent]:
         try:
             session = await self._get_session()
@@ -201,14 +194,7 @@ class MarketService:
             logger.error(f"Calendar fetch error: {exc}")
             return []
 
-    # ── Market Sentiment ─────────────────────────
-
     async def get_sentiment(self, pair: str) -> SentimentData | None:
-        """
-        Calculate sentiment from price action:
-        - Compare current price vs daily high/low midpoint.
-        - Use intraday range position as a proxy.
-        """
         data = await self.get_price(pair)
         if not data:
             return None
@@ -246,10 +232,7 @@ class MarketService:
             trend=trend,
         )
 
-    # ── Price Chart ──────────────────────────────
-
     async def get_chart_image(self, pair: str) -> bytes | None:
-        """Generate a price chart image using QuickChart.io with Yahoo Finance data."""
         pair = pair.upper().replace("/", "")
         symbol = self.YAHOO_SYMBOLS.get(pair)
         if not symbol:

@@ -196,6 +196,7 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
   <a onclick="navTo('subscribers')">👥 Subscribers</a>
   <a onclick="navTo('settings')">⚙️ Settings</a>
   <a onclick="navTo('logs')">📋 Logs</a>
+  <a onclick="logout()" style="color:var(--red)">🚪 Logout</a>
 </div>
 <nav class="bottom-nav">
   <div class="bottom-nav-inner">
@@ -223,6 +224,7 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
       <a data-page="subscribers"><span class="icon">👥</span>Subscribers</a>
       <a data-page="settings"><span class="icon">⚙️</span>Settings</a>
       <a data-page="logs"><span class="icon">📋</span>Logs</a>
+      <a onclick="logout()" style="margin-top:auto;color:var(--red)"><span class="icon">🚪</span>Logout</a>
     </nav>
   </aside>
 
@@ -466,6 +468,7 @@ async function loadSettings(){
   document.getElementById('set-channel').value=s.target_channel||'';
   document.getElementById('set-template').value=s.message_template||'';
 }
+function logout(){localStorage.removeItem('token');location.reload()}
 async function saveSetting(k,v){await api('/api/settings',{method:'PUT',body:JSON.stringify({key:k,value:v})})}
 async function saveTemplate(){await saveSetting('message_template',document.getElementById('set-template').value);alert('Saved!')}
 async function saveChannel(){await saveSetting('target_channel',document.getElementById('set-channel').value.trim());alert('Channel saved!')}

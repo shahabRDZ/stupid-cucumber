@@ -1,11 +1,8 @@
-from __future__ import annotations
-
 import re
 from app.models import ParsedSignal
 
 
 class SignalParser:
-    """Detects forex signals in raw text and extracts structured data."""
 
     FOREX_PAIRS = [
         "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "NZDUSD", "USDCAD",
@@ -34,8 +31,6 @@ class SignalParser:
         r"join\s+(us|our|now)", r"www\.\S+",
         r"👉.*(?:join|click|subscribe)",
     ]
-
-    # ── public API ──────────────────────────────
 
     def is_signal(self, text: str) -> bool:
         if not text or len(text) < 10:
@@ -84,8 +79,6 @@ class SignalParser:
 
     def clean(self, text: str) -> str:
         return self._clean(text)
-
-    # ── internals ───────────────────────────────
 
     def _detect_pair(self, text: str) -> str | None:
         normalized = re.sub(r"[/\-_\s]", "", text.upper())

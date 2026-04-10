@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -51,7 +49,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
     def auth(request: Request) -> None:
         _check_auth(request, pwd)
 
-    # ── Pages ──
+    # --- pages ---
 
     @router.get("/", response_class=HTMLResponse)
     async def admin_page():
@@ -61,7 +59,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
     async def signals_page():
         return FileResponse(STATIC_DIR / "signals.html")
 
-    # ── Auth ──
+    # --- auth ---
 
     @router.post("/api/login")
     async def login(data: LoginIn):
@@ -69,14 +67,14 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
             return {"token": pwd, "status": "ok"}
         raise HTTPException(status_code=401, detail="Wrong password")
 
-    # ── Dashboard ──
+    # --- dashboard ---
 
     @router.get("/api/dashboard")
     async def dashboard(request: Request):
         auth(request)
         return stats.dashboard().to_dict()
 
-    # ── Channels ──
+    # --- channels ---
 
     @router.get("/api/channels")
     async def list_channels(request: Request):
@@ -104,7 +102,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
         logs.add("INFO", "api", f"Channel @{username} active={active}")
         return {"status": "ok"}
 
-    # ── Signals ──
+    # --- signals ---
 
     @router.get("/api/signals")
     async def list_signals(
@@ -121,7 +119,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
         auth(request)
         return {"count": signals.count()}
 
-    # ── Raw Messages ──
+    # --- messages ---
 
     @router.get("/api/messages")
     async def list_messages(
@@ -137,7 +135,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
         auth(request)
         return {"count": messages.count()}
 
-    # ── Subscribers ──
+    # --- subscribers ---
 
     @router.get("/api/subscribers")
     async def list_subscribers(request: Request):
@@ -150,7 +148,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
         total, active = subscribers.count()
         return {"total": total, "active": active}
 
-    # ── Settings ──
+    # --- settings ---
 
     @router.get("/api/settings")
     async def get_settings(request: Request):
@@ -171,7 +169,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
         logs.add("INFO", "api", f"Setting: {data.key}={data.value}")
         return {"status": "ok"}
 
-    # ── Logs ──
+    # --- logs ---
 
     @router.get("/api/logs")
     async def list_logs(
@@ -183,7 +181,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
         auth(request)
         return [l.to_dict() for l in logs.get_many(limit, offset, level)]
 
-    # ── Market Data (admin) ──
+    # --- market ---
 
     @router.get("/api/market/prices")
     async def market_prices(request: Request, pairs: str = Query("")):
@@ -211,7 +209,7 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
                 results.append(s.to_dict())
         return results
 
-    # ── Public ──
+    # --- public ---
 
     @router.get("/api/public/signals")
     async def public_signals(limit: int = Query(20, le=50)):

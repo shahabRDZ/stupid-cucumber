@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from typing import Callable, Awaitable
 
@@ -15,13 +13,11 @@ from app.models import ParsedSignal
 from app.parser import SignalParser
 from app.telegram.base import BaseTelegramClient
 
-# Callback type: (signal_id, formatted_text, media, pair) -> None
 SignalCallback = Callable[[int, str, object, str], Awaitable[None]]
 MessageCallback = Callable[[dict], Awaitable[None]]
 
 
 class ChannelListener(BaseTelegramClient):
-    """Userbot that listens to source channels and processes messages."""
 
     def __init__(
         self,
