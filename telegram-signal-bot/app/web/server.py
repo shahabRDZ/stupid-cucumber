@@ -1,4 +1,5 @@
 import logging
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -8,22 +9,43 @@ from app.config import Config
 from app.services.market import MarketService
 from app.web.routes import create_router
 
+MAX_WS_CONNECTIONS = 50
+WS_IDLE_TIMEOUT = 1800  # 30 minutes
+
 
 class WebSocketManager:
     def __init__(self) -> None:
-        self._connections: list[WebSocket] = []
+        self._connections: dict[WebSocket, float] = {}  # ws -> last_active
 
-    async def connect(self, ws: WebSocket) -> None:
+    @property
+    def count(self) -> int:
+        return len(self._connections)
+
+    async def connect(self, ws: WebSocket) -> bool:
+        if len(self._connections) >= MAX_WS_CONNECTIONS:
+            await ws.close(code=1013, reason="Too many connections")
+            return False
         await ws.accept()
-        self._connections.append(ws)
+        self._connections[ws] = time.time()
+        return True
 
     def disconnect(self, ws: WebSocket) -> None:
+        self._connections.pop(ws, None)
+
+    def touch(self, ws: WebSocket) -> None:
         if ws in self._connections:
-            self._connections.remove(ws)
+            self._connections[ws] = time.time()
+
+    def cleanup_idle(self) -> list[WebSocket]:
+        now = time.time()
+        idle = [ws for ws, ts in self._connections.items() if now - ts > WS_IDLE_TIMEOUT]
+        for ws in idle:
+            self.disconnect(ws)
+        return idle
 
     async def broadcast(self, data: dict) -> None:
         dead: list[WebSocket] = []
-        for ws in self._connections:
+        for ws in list(self._connections):
             try:
                 await ws.send_json(data)
             except Exception:
@@ -54,10 +76,12 @@ class WebServer:
 
         @self.app.websocket("/ws")
         async def _ws_endpoint(ws: WebSocket) -> None:
-            await ws_mgr.connect(ws)
+            if not await ws_mgr.connect(ws):
+                return
             try:
                 while True:
                     data = await ws.receive_text()
+                    ws_mgr.touch(ws)
                     if data == "ping":
                         await ws.send_text("pong")
             except WebSocketDisconnect:

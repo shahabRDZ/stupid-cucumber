@@ -170,11 +170,7 @@ class Application:
         if self.channel_mgr:
             await self.channel_mgr.update_signal(signal_id, update_text)
         # notify subscribers
-        sig = None
-        for s in self.signals.get_many(limit=50):
-            if s.id == signal_id:
-                sig = s
-                break
+        sig = self.signals.get_by_id(signal_id)
         if sig:
             msg = f"{update_text}\n📡 {sig.pair} — Signal #{signal_id}"
             for sub in self.subscribers.get_active():

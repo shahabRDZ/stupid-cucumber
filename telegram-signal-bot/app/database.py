@@ -17,10 +17,11 @@ class Database:
         self._path = path
 
     def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self._path)
+        conn = sqlite3.connect(self._path, timeout=10)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA foreign_keys=ON")
+        conn.execute("PRAGMA busy_timeout=5000")
         return conn
 
     @contextmanager
@@ -58,7 +59,7 @@ CREATE TABLE IF NOT EXISTS raw_messages (
 );
 CREATE TABLE IF NOT EXISTS signals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    raw_message_id INTEGER REFERENCES raw_messages(id),
+    raw_message_id INTEGER UNIQUE REFERENCES raw_messages(id),
     pair TEXT,
     direction TEXT,
     entry_price TEXT,
@@ -282,6 +283,11 @@ class SignalRepository(BaseRepository):
         with self._db.session() as conn:
             return conn.execute("SELECT COUNT(*) AS c FROM signals").fetchone()["c"]
 
+    def get_by_id(self, signal_id: int) -> Signal | None:
+        with self._db.session() as conn:
+            row = conn.execute("SELECT * FROM signals WHERE id=?", (signal_id,)).fetchone()
+            return Signal(**dict(row)) if row else None
+
     def delete(self, signal_id: int) -> None:
         with self._db.session() as conn:
             conn.execute("DELETE FROM signal_messages WHERE signal_id=?", (signal_id,))
@@ -314,15 +320,19 @@ class SignalRepository(BaseRepository):
             return [Signal(**dict(r)) for r in rows]
 
     def win_loss_stats(self, days: int = 7) -> dict:
+        interval = f"-{int(days)} days"
         with self._db.session() as conn:
             total = conn.execute(
-                f"SELECT COUNT(*) as c FROM signals WHERE created_at >= datetime('now', '-{days} days')",
+                "SELECT COUNT(*) as c FROM signals WHERE created_at >= datetime('now', ?)",
+                (interval,),
             ).fetchone()["c"]
             wins = conn.execute(
-                f"SELECT COUNT(*) as c FROM signals WHERE status='tp_hit' AND created_at >= datetime('now', '-{days} days')",
+                "SELECT COUNT(*) as c FROM signals WHERE status='tp_hit' AND created_at >= datetime('now', ?)",
+                (interval,),
             ).fetchone()["c"]
             losses = conn.execute(
-                f"SELECT COUNT(*) as c FROM signals WHERE status='sl_hit' AND created_at >= datetime('now', '-{days} days')",
+                "SELECT COUNT(*) as c FROM signals WHERE status='sl_hit' AND created_at >= datetime('now', ?)",
+                (interval,),
             ).fetchone()["c"]
             return {"total": total, "wins": wins, "losses": losses, "active": total - wins - losses}
 

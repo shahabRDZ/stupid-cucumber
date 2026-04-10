@@ -20,13 +20,6 @@ _FALLBACK = {
     "tr": {"hello": "Merhaba", "choose_lang": "Dilinizi seçin:", "unsubscribed": "Abonelikten çıktınız. /start ile tekrar abone olun."},
 }
 
-# settings_repo gets set in __init__
-_settings_ref = None
-
-def _set_settings_ref(s):
-    global _settings_ref
-    _settings_ref = s
-
 _LANGS = {"en": "English", "fa": "فارسی", "tr": "Türkçe"}
 
 _KEYBOARDS = {
@@ -65,11 +58,10 @@ _ALL_BTNS = (
 )
 
 
-def _t(lang: str, key: str) -> str:
-    # try from DB first
-    if _settings_ref:
+def _t(lang: str, key: str, settings=None) -> str:
+    if settings:
         db_key = f"{key}_{lang}"
-        val = _settings_ref.get(db_key)
+        val = settings.get(db_key)
         if val:
             return val
     return _FALLBACK.get(lang, _FALLBACK["en"]).get(key, _FALLBACK["en"].get(key, ""))
@@ -101,7 +93,6 @@ class SignalBot(BaseTelegramClient):
         self._market = market
         self._user_client = user_client
         self._alert_service = AlertService(alerts_repo, market)
-        _set_settings_ref(settings)
 
     @property
     def alert_service(self) -> AlertService:
@@ -131,18 +122,32 @@ class SignalBot(BaseTelegramClient):
         )
         await self.send_to_user(chat_id, msg)
 
-    async def send_to_user(self, chat_id: int, text: str, media=None) -> bool:
-        try:
-            if media:
-                await self._client.send_file(chat_id, media, caption=text, parse_mode="html")
-            else:
-                await self._client.send_message(chat_id, text, parse_mode="html")
-            return True
-        except Exception as exc:
-            self._logger.warning(f"Send failed → {chat_id}: {exc}")
-            if "blocked" in str(exc).lower() or "deactivated" in str(exc).lower():
-                self._subscribers.deactivate(chat_id)
-            return False
+    _PERMANENT_ERRORS = ("blocked", "deactivated", "user is bot", "peer_id_invalid", "input_user_deactivated")
+
+    async def send_to_user(self, chat_id: int, text: str, media=None, retries: int = 2) -> bool:
+        for attempt in range(retries + 1):
+            try:
+                if media:
+                    await self._client.send_file(chat_id, media, caption=text, parse_mode="html")
+                else:
+                    await self._client.send_message(chat_id, text, parse_mode="html")
+                return True
+            except Exception as exc:
+                err = str(exc).lower()
+                # permanent error → deactivate, no retry
+                if any(e in err for e in self._PERMANENT_ERRORS):
+                    self._logger.info(f"Permanent fail → {chat_id}: {exc}")
+                    self._subscribers.deactivate(chat_id)
+                    return False
+                # transient error → retry with backoff
+                if attempt < retries:
+                    import asyncio
+                    wait = 1 * (attempt + 1)
+                    self._logger.warning(f"Send retry {attempt+1}/{retries} → {chat_id}: {exc}")
+                    await asyncio.sleep(wait)
+                else:
+                    self._logger.error(f"Send failed after {retries} retries → {chat_id}: {exc}")
+        return False
 
     async def broadcast_signal(self, signal_id: int, text: str, media=None, pair: str = "") -> int:
         chart_bytes = None
@@ -203,8 +208,15 @@ class SignalBot(BaseTelegramClient):
 
     _pending_pairs: dict[int, str] = {}
 
+    def _get_lang(self, chat_id: int) -> str:
+        return self._subscribers.get_lang(chat_id)
+
+    def _t(self, lang: str, key: str) -> str:
+        return _t(lang, key, self._settings)
+
     def _register_handlers(self) -> None:
         cli = self._client
+        _st = self._settings  # local ref for closures
 
         @cli.on(events.NewMessage(pattern="/start"))
         async def _start(event):
@@ -228,8 +240,8 @@ class SignalBot(BaseTelegramClient):
                 )
             # then: welcome message
             msg = (
-                f"{_t(lang, 'hello')} <b>{name}</b>! 👋\n\n"
-                f"{_t(lang, 'welcome')}\n\n✅ {_t(lang, 'subscribed')}"
+                f"{_t(lang,'hello', _st)} <b>{name}</b>! 👋\n\n"
+                f"{_t(lang,'welcome', _st)}\n\n✅ {_t(lang,'subscribed', _st)}"
             )
             await event.respond(msg, parse_mode="html", buttons=_kb(lang))
 
@@ -237,7 +249,7 @@ class SignalBot(BaseTelegramClient):
         async def _stop(event):
             lang = self._subscribers.get_lang(event.chat_id)
             self._subscribers.deactivate(event.chat_id)
-            await event.reply(_t(lang, "unsubscribed"), parse_mode="html", buttons=_kb(lang))
+            await event.reply(_t(lang,"unsubscribed", _st), parse_mode="html", buttons=_kb(lang))
 
         @cli.on(events.NewMessage(pattern="/status"))
         async def _status(event):
@@ -255,7 +267,7 @@ class SignalBot(BaseTelegramClient):
         @cli.on(events.NewMessage(pattern="/help"))
         async def _help(event):
             lang = self._subscribers.get_lang(event.chat_id)
-            await event.reply(_t(lang, "help"), parse_mode="html", buttons=_kb(lang))
+            await event.reply(_t(lang,"help", _st), parse_mode="html", buttons=_kb(lang))
 
         @cli.on(events.NewMessage(pattern="/menu"))
         async def _menu(event):
@@ -269,7 +281,7 @@ class SignalBot(BaseTelegramClient):
                 [Button.inline(name, data=f"lang_{code}".encode())]
                 for code, name in _LANGS.items()
             ]
-            await event.reply(_t(lang, "choose_lang"), buttons=buttons)
+            await event.reply(_t(lang,"choose_lang", _st), buttons=buttons)
 
         @cli.on(events.CallbackQuery(pattern=b"lang_"))
         async def _lang_cb(event):
@@ -286,11 +298,7 @@ class SignalBot(BaseTelegramClient):
                 await event.answer("❌ Not authorized")
                 return
             signal_id = int(event.data.decode().split("_")[1])
-            sig = None
-            for s in self._signals.get_many(limit=50):
-                if s.id == signal_id:
-                    sig = s
-                    break
+            sig = self._signals.get_by_id(signal_id)
             if sig and sig.formatted_text:
                 pair = self._pending_pairs.pop(signal_id, "")
                 await self.broadcast_signal(signal_id, sig.formatted_text, pair=pair)
@@ -509,11 +517,7 @@ class SignalBot(BaseTelegramClient):
         @cli.on(events.CallbackQuery(pattern=rb"calc_(\d+)"))
         async def _calc_signal(event):
             signal_id = int(event.data.decode().split("_")[1])
-            sig = None
-            for s in self._signals.get_many(limit=50):
-                if s.id == signal_id:
-                    sig = s
-                    break
+            sig = self._signals.get_by_id(signal_id)
             if not sig or not sig.entry_price or not sig.sl:
                 await event.answer("⚠️ Signal missing Entry/SL", alert=True)
                 return
@@ -539,7 +543,7 @@ class SignalBot(BaseTelegramClient):
             # Show last 3 signals from DB
             recent = self._signals.get_many(limit=3)
             if recent:
-                await event.reply("✅ " + _t(lang, "subscribed") + "\n\n📡 <b>Last 3 Signals:</b>", parse_mode="html", buttons=_kb(lang))
+                await event.reply("✅ " + _t(lang,"subscribed", _st) + "\n\n📡 <b>Last 3 Signals:</b>", parse_mode="html", buttons=_kb(lang))
                 for s in recent:
                     ts = _format_signal_time(s.created_at)
                     arrow = "🟢" if s.direction == "BUY" else "🔴"
@@ -563,14 +567,14 @@ class SignalBot(BaseTelegramClient):
             else:
                 # No signals in DB — fetch last 3 from source channel via userbot
                 if not self._user_client:
-                    await event.reply("✅ " + _t(lang, "subscribed") + "\n\n📭 No signals yet.", parse_mode="html", buttons=_kb(lang))
+                    await event.reply("✅ " + _t(lang,"subscribed", _st) + "\n\n📭 No signals yet.", parse_mode="html", buttons=_kb(lang))
                     return
                 from app.parser import SignalParser
                 from app.formatter import SignalFormatter
                 parser = SignalParser()
                 formatter = SignalFormatter()
                 found = 0
-                await event.reply("✅ " + _t(lang, "subscribed") + "\n\n📡 <b>Fetching latest signals...</b>", parse_mode="html", buttons=_kb(lang))
+                await event.reply("✅ " + _t(lang,"subscribed", _st) + "\n\n📡 <b>Fetching latest signals...</b>", parse_mode="html", buttons=_kb(lang))
                 for ch in self._config.default_channels:
                     try:
                         entity = await self._user_client.get_entity(ch)

@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
+from app.auth import RateLimiter, create_token, verify_password, verify_token
 from app.config import Config
 from app.database import (
     AlertRepository, ChannelRepository, LogRepository, MessageRepository,
@@ -50,9 +51,12 @@ class TextsIn(BaseModel):
     texts: dict
 
 
-def _check_auth(request: Request, password: str) -> None:
+_login_limiter = RateLimiter(max_attempts=5, window_seconds=60)
+
+
+def _check_auth(request: Request, password_hash: str) -> None:
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    if token != password:
+    if not token or not verify_token(token):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
@@ -67,10 +71,10 @@ def create_router(config: Config, repos: dict, market: MarketService, web_server
     logs: LogRepository = repos["logs"]
     stats: StatsRepository = repos["stats"]
     alerts: AlertRepository = repos["alerts"]
-    pwd = config.admin_password
+    pwd_hash = config.password_hash
 
     def auth(request: Request) -> None:
-        _check_auth(request, pwd)
+        _check_auth(request, pwd_hash)
 
     # --- pages ---
 
@@ -85,10 +89,20 @@ def create_router(config: Config, repos: dict, market: MarketService, web_server
     # --- auth ---
 
     @router.post("/api/login")
-    async def login(data: LoginIn):
-        if data.password == pwd:
-            return {"token": pwd, "status": "ok"}
-        raise HTTPException(status_code=401, detail="Wrong password")
+    async def login(data: LoginIn, request: Request):
+        client_ip = request.client.host if request.client else "unknown"
+        if not _login_limiter.is_allowed(client_ip):
+            raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+        if not verify_password(data.password, pwd_hash):
+            raise HTTPException(status_code=401, detail="Wrong password")
+        token = create_token(pwd_hash)
+        return {"token": token, "status": "ok"}
+
+    # --- health check (no auth) ---
+
+    @router.get("/api/health")
+    async def health():
+        return {"status": "ok", "service": "signal-bot"}
 
     # --- dashboard ---
 
