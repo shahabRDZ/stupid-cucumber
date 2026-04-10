@@ -354,6 +354,25 @@ def create_router(config: Config, repos: dict, market: MarketService, web_server
         logs.add("INFO", "api", f"Message #{message_id} deleted")
         return {"status": "ok"}
 
+    # --- channel posts ---
+
+    @router.get("/api/channel/posts")
+    async def channel_posts(request: Request, limit: int = Query(50, le=100)):
+        auth(request)
+        if not web_server:
+            return []
+        return await web_server.get_channel_posts(limit)
+
+    @router.delete("/api/channel/posts/{message_id}")
+    async def delete_channel_post(message_id: int, request: Request):
+        auth(request)
+        if not web_server:
+            raise HTTPException(500, "Not connected")
+        ok = await web_server.delete_channel_post(message_id)
+        if not ok:
+            raise HTTPException(400, "Delete failed")
+        return {"status": "ok"}
+
     # --- risk calculator ---
 
     @router.post("/api/calc-risk")

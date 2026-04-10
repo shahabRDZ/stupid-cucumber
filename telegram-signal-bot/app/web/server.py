@@ -62,6 +62,8 @@ class WebServer:
         self._channel_send_callback = None
         self._bot_broadcast_callback = None
         self._channel_delete_callback = None
+        self._channel_posts_callback = None
+        self._channel_delete_post_callback = None
 
         self.app = FastAPI(title="Signal Bot API", version="2.0")
 
@@ -105,9 +107,25 @@ class WebServer:
             return await self._bot_broadcast_callback(text)
         return 0
 
+    def on_channel_posts(self, callback):
+        self._channel_posts_callback = callback
+
+    def on_channel_delete_post(self, callback):
+        self._channel_delete_post_callback = callback
+
     async def delete_channel_message(self, msg_type: str, item_id: int):
         if self._channel_delete_callback:
             await self._channel_delete_callback(msg_type, item_id)
+
+    async def get_channel_posts(self, limit: int = 50) -> list[dict]:
+        if self._channel_posts_callback:
+            return await self._channel_posts_callback(limit)
+        return []
+
+    async def delete_channel_post(self, message_id: int) -> bool:
+        if self._channel_delete_post_callback:
+            return await self._channel_delete_post_callback(message_id)
+        return False
 
     async def notify_signal(self, signal_data: dict) -> None:
         await self.ws_manager.broadcast({"type": "new_signal", "data": signal_data})

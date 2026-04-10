@@ -196,6 +196,7 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
   <a onclick="navTo('subscribers')">👥 Subscribers</a>
   <a onclick="navTo('texts')">✏️ Texts</a>
   <a onclick="navTo('chmanage')">📢 Channel Mgr</a>
+  <a onclick="navTo('chposts')">🗑️ Channel Posts</a>
   <a onclick="navTo('settings')">⚙️ Settings</a>
   <a onclick="navTo('logs')">📋 Logs</a>
   <a onclick="logout()" style="color:var(--red)">🚪 Logout</a>
@@ -226,6 +227,7 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
       <a data-page="subscribers"><span class="icon">👥</span>Subscribers</a>
       <a data-page="texts"><span class="icon">✏️</span>Texts</a>
       <a data-page="chmanage"><span class="icon">📢</span>Channel Mgr</a>
+      <a data-page="chposts"><span class="icon">🗑️</span>Channel Posts</a>
       <a data-page="settings"><span class="icon">⚙️</span>Settings</a>
       <a data-page="logs"><span class="icon">📋</span>Logs</a>
       <a onclick="logout()" style="margin-top:auto;color:var(--red)"><span class="icon">🚪</span>Logout</a>
@@ -425,6 +427,14 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
       </div></div>
     </div>
 
+    <!-- Channel Posts -->
+    <div class="page" id="page-chposts">
+      <h2>Channel Posts</h2>
+      <div class="panel"><div class="panel-header"><h3>Recent Posts</h3><button class="btn btn-sm btn-primary" onclick="loadChPosts()">Refresh</button></div><div class="panel-body">
+        <div id="chposts-list"></div>
+      </div></div>
+    </div>
+
     <!-- Logs -->
     <div class="page" id="page-logs">
       <h2>Logs</h2>
@@ -457,7 +467,7 @@ function headers(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'applic
 async function api(p,o={}){const r=await fetch(p,{headers:headers(),...o});if(r.status===401){localStorage.removeItem('token');location.reload()}return r.json()}
 
 // Navigation
-const loaders={dashboard:loadDashboard,market:loadMarket,signals:loadSignals,messages:loadMessages,channels:loadChannels,subscribers:loadSubscribers,texts:loadTexts,chmanage:loadChManage,settings:loadSettings,logs:loadLogs};
+const loaders={dashboard:loadDashboard,market:loadMarket,signals:loadSignals,messages:loadMessages,channels:loadChannels,subscribers:loadSubscribers,texts:loadTexts,chmanage:loadChManage,chposts:loadChPosts,settings:loadSettings,logs:loadLogs};
 
 function navTo(page){
   // Update sidebar
@@ -570,6 +580,22 @@ async function saveTexts(){
 
 // Channel Manager
 function loadChManage(){}
+async function loadChPosts(){
+  const posts=await api('/api/channel/posts?limit=50');
+  document.getElementById('chposts-list').innerHTML=posts.map(p=>{
+    const date=fTime(p.date);
+    const text=esc(p.text||'').replace(/\n/g,'<br>');
+    const media=p.has_media?'<span class="badge info">Media</span>':'';
+    const pin=p.pinned?'<span class="badge warning">Pinned</span>':'';
+    const views=p.views?`<span style="color:var(--text3);font-size:12px">👁 ${p.views}</span>`:'';
+    return `<div style="padding:14px;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:flex-start"><div style="flex:1;min-width:0"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><b style="color:var(--text3);font-size:12px">#${p.id}</b>${pin}${media}${views}<span style="color:var(--text3);font-size:12px;margin-right:auto" dir="ltr">${date}</span></div><div style="font-size:13px;color:var(--text2);line-height:1.5;max-height:80px;overflow:hidden" dir="ltr">${text||'<i style="color:var(--text3)">(media only)</i>'}</div></div><button class="btn btn-sm btn-danger" onclick="deleteChPost(${p.id})">Delete</button></div>`
+  }).join('')||'<p style="color:var(--text3);text-align:center;padding:20px">No posts found</p>';
+}
+async function deleteChPost(id){
+  if(!confirm('Delete post #'+id+' from channel?'))return;
+  await api('/api/channel/posts/'+id,{method:'DELETE'});
+  loadChPosts();
+}
 function _getTargets(chId,botId){
   const t=[];
   if(document.getElementById(chId)?.checked)t.push('channel');

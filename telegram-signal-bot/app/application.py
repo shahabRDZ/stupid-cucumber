@@ -92,6 +92,8 @@ class Application:
         self.web.on_channel_send(self._send_to_channel)
         self.web.on_bot_broadcast(self._broadcast_to_bot)
         self.web.on_channel_delete(self._delete_channel_message)
+        self.web.on_channel_posts(self._get_channel_posts)
+        self.web.on_channel_delete_post(self._delete_channel_post)
 
         self.logs.add("INFO", "app", f"System ready — port {self._config.web_port}")
         logger.info(f"Dashboard : http://localhost:{self._config.web_port}")
@@ -161,6 +163,40 @@ class Application:
                     logger.info(f"Deleted signal #{item_id} message from channel")
                 except Exception as exc:
                     logger.warning(f"Channel delete failed: {exc}")
+
+    async def _get_channel_posts(self, limit: int = 50) -> list[dict]:
+        ch = self.settings.get("target_channel", "")
+        if not ch:
+            return []
+        try:
+            posts = []
+            async for msg in self.bot.client.iter_messages(ch, limit=limit):
+                text = msg.text or msg.raw_text or ""
+                posts.append({
+                    "id": msg.id,
+                    "text": text[:300],
+                    "date": str(msg.date),
+                    "has_media": bool(msg.media),
+                    "views": getattr(msg, "views", 0) or 0,
+                    "pinned": getattr(msg, "pinned", False),
+                })
+            return posts
+        except Exception as exc:
+            logger.error(f"Get channel posts failed: {exc}")
+            return []
+
+    async def _delete_channel_post(self, message_id: int) -> bool:
+        ch = self.settings.get("target_channel", "")
+        if not ch:
+            return False
+        try:
+            await self.bot.client.delete_messages(ch, [message_id])
+            self.logs.add("INFO", "app", f"Channel post #{message_id} deleted")
+            logger.info(f"Deleted channel post #{message_id}")
+            return True
+        except Exception as exc:
+            logger.warning(f"Delete channel post failed: {exc}")
+            return False
 
     async def _handle_message(self, msg_data: dict) -> None:
         await self.web.notify_message(msg_data)
