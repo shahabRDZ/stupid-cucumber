@@ -60,6 +60,13 @@ class Application:
         self.channel_mgr = None
         self.web = WebServer(config, repos, self.market)
 
+    @property
+    def _user_or_bot(self):
+        """Prefer user client (can read any channel), fall back to bot client."""
+        if self.listener.is_connected:
+            return self.listener.client
+        return self.bot.client
+
     async def start(self) -> None:
         logger.info("Starting application...")
         self._db.init_schema()
@@ -172,7 +179,7 @@ class Application:
             return []
         try:
             posts = []
-            async for msg in self.bot.client.iter_messages(ch, limit=limit):
+            async for msg in self._user_or_bot.iter_messages(ch, limit=limit):
                 text = msg.text or msg.raw_text or ""
                 replies = 0
                 if hasattr(msg, "replies") and msg.replies:
@@ -197,7 +204,7 @@ class Application:
             return []
         try:
             comments = []
-            async for msg in self.bot.client.iter_messages(ch, reply_to=post_id, limit=limit):
+            async for msg in self._user_or_bot.iter_messages(ch, reply_to=post_id, limit=limit):
                 sender = await msg.get_sender()
                 name = ""
                 if sender:
@@ -219,7 +226,7 @@ class Application:
         if not ch:
             return False
         try:
-            await self.bot.client.delete_messages(ch, [message_id])
+            await self._user_or_bot.delete_messages(ch, [message_id])
             self.logs.add("INFO", "app", f"Channel post #{message_id} deleted")
             logger.info(f"Deleted channel post #{message_id}")
             return True
@@ -233,10 +240,10 @@ class Application:
             return 0
         try:
             ids = []
-            async for msg in self.bot.client.iter_messages(ch, reply_to=post_id, limit=200):
+            async for msg in self._user_or_bot.iter_messages(ch, reply_to=post_id, limit=200):
                 ids.append(msg.id)
             if ids:
-                await self.bot.client.delete_messages(ch, ids)
+                await self._user_or_bot.delete_messages(ch, ids)
                 self.logs.add("INFO", "app", f"Deleted {len(ids)} comments from post #{post_id}")
             return len(ids)
         except Exception as exc:
