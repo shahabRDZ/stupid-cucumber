@@ -94,6 +94,8 @@ class Application:
         self.web.on_channel_delete(self._delete_channel_message)
         self.web.on_channel_posts(self._get_channel_posts)
         self.web.on_channel_delete_post(self._delete_channel_post)
+        self.web.on_post_comments(self._get_post_comments)
+        self.web.on_delete_comments(self._delete_post_comments)
 
         self.logs.add("INFO", "app", f"System ready — port {self._config.web_port}")
         logger.info(f"Dashboard : http://localhost:{self._config.web_port}")
@@ -172,6 +174,9 @@ class Application:
             posts = []
             async for msg in self.bot.client.iter_messages(ch, limit=limit):
                 text = msg.text or msg.raw_text or ""
+                replies = 0
+                if hasattr(msg, "replies") and msg.replies:
+                    replies = getattr(msg.replies, "replies", 0) or 0
                 posts.append({
                     "id": msg.id,
                     "text": text[:300],
@@ -179,10 +184,34 @@ class Application:
                     "has_media": bool(msg.media),
                     "views": getattr(msg, "views", 0) or 0,
                     "pinned": getattr(msg, "pinned", False),
+                    "replies": replies,
                 })
             return posts
         except Exception as exc:
             logger.error(f"Get channel posts failed: {exc}")
+            return []
+
+    async def _get_post_comments(self, post_id: int, limit: int = 50) -> list[dict]:
+        ch = self.settings.get("target_channel", "")
+        if not ch:
+            return []
+        try:
+            comments = []
+            async for msg in self.bot.client.iter_messages(ch, reply_to=post_id, limit=limit):
+                sender = await msg.get_sender()
+                name = ""
+                if sender:
+                    name = getattr(sender, "first_name", "") or getattr(sender, "title", "") or ""
+                comments.append({
+                    "id": msg.id,
+                    "text": (msg.text or msg.raw_text or "")[:200],
+                    "date": str(msg.date),
+                    "sender": name,
+                    "sender_id": msg.sender_id or 0,
+                })
+            return comments
+        except Exception as exc:
+            logger.error(f"Get comments failed for post #{post_id}: {exc}")
             return []
 
     async def _delete_channel_post(self, message_id: int) -> bool:
@@ -197,6 +226,22 @@ class Application:
         except Exception as exc:
             logger.warning(f"Delete channel post failed: {exc}")
             return False
+
+    async def _delete_post_comments(self, post_id: int) -> int:
+        ch = self.settings.get("target_channel", "")
+        if not ch:
+            return 0
+        try:
+            ids = []
+            async for msg in self.bot.client.iter_messages(ch, reply_to=post_id, limit=200):
+                ids.append(msg.id)
+            if ids:
+                await self.bot.client.delete_messages(ch, ids)
+                self.logs.add("INFO", "app", f"Deleted {len(ids)} comments from post #{post_id}")
+            return len(ids)
+        except Exception as exc:
+            logger.warning(f"Delete comments failed: {exc}")
+            return 0
 
     async def _handle_message(self, msg_data: dict) -> None:
         await self.web.notify_message(msg_data)

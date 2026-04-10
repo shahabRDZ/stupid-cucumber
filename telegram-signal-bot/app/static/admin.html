@@ -433,6 +433,9 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
       <div class="panel"><div class="panel-header"><h3>Recent Posts</h3><button class="btn btn-sm btn-primary" onclick="loadChPosts()">Refresh</button></div><div class="panel-body">
         <div id="chposts-list"></div>
       </div></div>
+      <div class="panel" id="comments-panel" style="display:none"><div class="panel-header"><h3 id="comments-title">Comments</h3>
+        <div style="display:flex;gap:8px"><button class="btn btn-sm btn-danger" onclick="deleteAllComments()">Delete All Comments</button><button class="btn btn-sm btn-primary" onclick="closeComments()">Close</button></div>
+      </div><div class="panel-body"><div id="comments-list"></div></div></div>
     </div>
 
     <!-- Logs -->
@@ -588,14 +591,39 @@ async function loadChPosts(){
     const media=p.has_media?'<span class="badge info">Media</span>':'';
     const pin=p.pinned?'<span class="badge warning">Pinned</span>':'';
     const views=p.views?`<span style="color:var(--text3);font-size:12px">👁 ${p.views}</span>`:'';
-    return `<div style="padding:14px;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:flex-start"><div style="flex:1;min-width:0"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><b style="color:var(--text3);font-size:12px">#${p.id}</b>${pin}${media}${views}<span style="color:var(--text3);font-size:12px;margin-right:auto" dir="ltr">${date}</span></div><div style="font-size:13px;color:var(--text2);line-height:1.5;max-height:80px;overflow:hidden" dir="ltr">${text||'<i style="color:var(--text3)">(media only)</i>'}</div></div><button class="btn btn-sm btn-danger" onclick="deleteChPost(${p.id})">Delete</button></div>`
+    const cmts=p.replies?`<span class="badge signal" style="cursor:pointer" onclick="showComments(${p.id})">💬 ${p.replies}</span>`:'';
+    return `<div style="padding:14px;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:flex-start"><div style="flex:1;min-width:0"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><b style="color:var(--text3);font-size:12px">#${p.id}</b>${pin}${media}${cmts}${views}<span style="color:var(--text3);font-size:12px;margin-right:auto" dir="ltr">${date}</span></div><div style="font-size:13px;color:var(--text2);line-height:1.5;max-height:80px;overflow:hidden" dir="ltr">${text||'<i style="color:var(--text3)">(media only)</i>'}</div></div><div style="display:flex;flex-direction:column;gap:4px">${p.replies?`<button class="btn btn-sm btn-primary" onclick="showComments(${p.id})">Comments</button>`:''}<button class="btn btn-sm btn-danger" onclick="deleteChPost(${p.id})">Delete</button></div></div>`
   }).join('')||'<p style="color:var(--text3);text-align:center;padding:20px">No posts found</p>';
 }
+let _currentPostId=0;
 async function deleteChPost(id){
   if(!confirm('Delete post #'+id+' from channel?'))return;
   await api('/api/channel/posts/'+id,{method:'DELETE'});
   loadChPosts();
 }
+async function showComments(postId){
+  _currentPostId=postId;
+  document.getElementById('comments-title').textContent='Comments — Post #'+postId;
+  document.getElementById('comments-panel').style.display='block';
+  document.getElementById('comments-list').innerHTML='<p style="color:var(--text3)">Loading...</p>';
+  const cmts=await api('/api/channel/posts/'+postId+'/comments');
+  document.getElementById('comments-list').innerHTML=cmts.map(c=>{
+    const text=esc(c.text||'').replace(/\n/g,'<br>');
+    return `<div style="padding:10px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start"><div style="flex:1"><div style="display:flex;gap:8px;margin-bottom:4px"><b style="font-size:13px">${esc(c.sender||'Unknown')}</b><span style="color:var(--text3);font-size:11px" dir="ltr">${fTime(c.date)}</span></div><div style="font-size:13px;color:var(--text2)" dir="ltr">${text}</div></div><button class="btn btn-sm btn-danger" onclick="deleteComment(${c.id})">Delete</button></div>`
+  }).join('')||'<p style="color:var(--text3);text-align:center;padding:16px">No comments</p>';
+}
+async function deleteComment(id){
+  if(!confirm('Delete this comment?'))return;
+  await api('/api/channel/posts/'+id,{method:'DELETE'});
+  if(_currentPostId)showComments(_currentPostId);
+}
+async function deleteAllComments(){
+  if(!confirm('Delete ALL comments on post #'+_currentPostId+'?'))return;
+  const r=await api('/api/channel/posts/'+_currentPostId+'/comments',{method:'DELETE'});
+  alert('Deleted '+r.deleted+' comments');
+  closeComments();loadChPosts();
+}
+function closeComments(){document.getElementById('comments-panel').style.display='none';_currentPostId=0;}
 function _getTargets(chId,botId){
   const t=[];
   if(document.getElementById(chId)?.checked)t.push('channel');

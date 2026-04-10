@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel
 
 from app.auth import RateLimiter, create_token, verify_password, verify_token
@@ -80,11 +80,17 @@ def create_router(config: Config, repos: dict, market: MarketService, web_server
 
     @router.get("/", response_class=HTMLResponse)
     async def admin_page():
-        return FileResponse(STATIC_DIR / "admin.html")
+        return FileResponse(
+            STATIC_DIR / "admin.html",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
 
     @router.get("/signals", response_class=HTMLResponse)
     async def signals_page():
-        return FileResponse(STATIC_DIR / "signals.html")
+        return FileResponse(
+            STATIC_DIR / "signals.html",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
 
     # --- auth ---
 
@@ -372,6 +378,21 @@ def create_router(config: Config, repos: dict, market: MarketService, web_server
         if not ok:
             raise HTTPException(400, "Delete failed")
         return {"status": "ok"}
+
+    @router.get("/api/channel/posts/{post_id}/comments")
+    async def post_comments(post_id: int, request: Request):
+        auth(request)
+        if not web_server:
+            return []
+        return await web_server.get_post_comments(post_id)
+
+    @router.delete("/api/channel/posts/{post_id}/comments")
+    async def delete_all_comments(post_id: int, request: Request):
+        auth(request)
+        if not web_server:
+            raise HTTPException(500, "Not connected")
+        count = await web_server.delete_post_comments(post_id)
+        return {"status": "ok", "deleted": count}
 
     # --- risk calculator ---
 
