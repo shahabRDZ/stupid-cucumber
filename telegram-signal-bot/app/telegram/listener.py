@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Callable, Awaitable
 
 from telethon import events
@@ -12,8 +13,6 @@ from app.formatter import SignalFormatter
 from app.models import ParsedSignal
 from app.parser import SignalParser
 from app.telegram.base import BaseTelegramClient
-
-import re
 
 SignalCallback = Callable[[int, str, object, str], Awaitable[None]]
 MessageCallback = Callable[[dict], Awaitable[None]]

@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 
 from telethon import events, Button
-from telethon.tl.types import ChannelParticipantsRecent
 
 from app.config import Config
 from app.database import (
@@ -287,9 +286,6 @@ class SignalBot(BaseTelegramClient):
                 await event.answer("❌ Not authorized")
                 return
             signal_id = int(event.data.decode().split("_")[1])
-            signals = self._signals.get_many(limit=1, offset=0)
-            # Find the signal
-            from app.database import Database
             sig = None
             for s in self._signals.get_many(limit=50):
                 if s.id == signal_id:

@@ -49,6 +49,20 @@ class WebServer:
         router = create_router(config, repositories, market, self)
         self.app.include_router(router)
 
+        # WebSocket endpoint — must be registered here, not inside a method
+        ws_mgr = self.ws_manager
+
+        @self.app.websocket("/ws")
+        async def _ws_endpoint(ws: WebSocket) -> None:
+            await ws_mgr.connect(ws)
+            try:
+                while True:
+                    data = await ws.receive_text()
+                    if data == "ping":
+                        await ws.send_text("pong")
+            except WebSocketDisconnect:
+                ws_mgr.disconnect(ws)
+
     def on_channel_send(self, callback):
         self._channel_send_callback = callback
 
@@ -70,17 +84,6 @@ class WebServer:
     async def delete_channel_message(self, msg_type: str, item_id: int):
         if self._channel_delete_callback:
             await self._channel_delete_callback(msg_type, item_id)
-
-        @self.app.websocket("/ws")
-        async def _ws_endpoint(ws: WebSocket) -> None:
-            await self.ws_manager.connect(ws)
-            try:
-                while True:
-                    data = await ws.receive_text()
-                    if data == "ping":
-                        await ws.send_text("pong")
-            except WebSocketDisconnect:
-                self.ws_manager.disconnect(ws)
 
     async def notify_signal(self, signal_data: dict) -> None:
         await self.ws_manager.broadcast({"type": "new_signal", "data": signal_data})
