@@ -158,6 +158,9 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
         return {
             "filter_enabled": settings.get("filter_enabled", "1"),
             "send_enabled": settings.get("send_enabled", "1"),
+            "approval_mode": settings.get("approval_mode", "0"),
+            "chart_enabled": settings.get("chart_enabled", "1"),
+            "target_channel": settings.get("target_channel", ""),
             "message_template": settings.get("message_template", ""),
         }
 

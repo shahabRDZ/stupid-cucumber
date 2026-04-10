@@ -245,3 +245,93 @@ class MarketService:
             sellers_pct=sellers_pct,
             trend=trend,
         )
+
+    # ── Price Chart ──────────────────────────────
+
+    async def get_chart_image(self, pair: str) -> bytes | None:
+        """Generate a price chart image using QuickChart.io with Yahoo Finance data."""
+        pair = pair.upper().replace("/", "")
+        symbol = self.YAHOO_SYMBOLS.get(pair)
+        if not symbol:
+            return None
+
+        try:
+            session = await self._get_session()
+            # Fetch 4h data for last 2 days
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=15m&range=2d"
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    return None
+                raw = await resp.json()
+
+            result = raw["chart"]["result"][0]
+            timestamps = result.get("timestamp", [])
+            quotes = result.get("indicators", {}).get("quote", [{}])[0]
+            closes = quotes.get("close", [])
+
+            # Filter None values
+            prices = []
+            labels = []
+            for i, (ts, c) in enumerate(zip(timestamps, closes)):
+                if c is not None:
+                    prices.append(round(c, 5))
+                    if i % 8 == 0:
+                        from datetime import datetime as dt
+                        labels.append(dt.fromtimestamp(ts).strftime("%H:%M"))
+                    else:
+                        labels.append("")
+
+            if len(prices) < 5:
+                return None
+
+            # Determine line color based on trend
+            color = "rgb(16,185,129)" if prices[-1] >= prices[0] else "rgb(239,68,68)"
+            bg_color = "rgba(16,185,129,0.1)" if prices[-1] >= prices[0] else "rgba(239,68,68,0.1)"
+
+            import json
+            chart_config = {
+                "type": "line",
+                "data": {
+                    "labels": labels,
+                    "datasets": [{
+                        "label": pair,
+                        "data": prices,
+                        "borderColor": color,
+                        "backgroundColor": bg_color,
+                        "borderWidth": 2,
+                        "pointRadius": 0,
+                        "fill": True,
+                        "tension": 0.3,
+                    }]
+                },
+                "options": {
+                    "responsive": True,
+                    "plugins": {
+                        "title": {"display": True, "text": f"{pair} — 2D Chart", "color": "#e2e8f0", "font": {"size": 16}},
+                        "legend": {"display": False},
+                    },
+                    "scales": {
+                        "x": {"ticks": {"color": "#94a3b8", "maxRotation": 0}, "grid": {"color": "rgba(148,163,184,0.1)"}},
+                        "y": {"ticks": {"color": "#94a3b8"}, "grid": {"color": "rgba(148,163,184,0.1)"}},
+                    },
+                },
+            }
+
+            chart_url = "https://quickchart.io/chart"
+            payload = {
+                "chart": json.dumps(chart_config),
+                "width": 600,
+                "height": 350,
+                "backgroundColor": "#0f172a",
+                "format": "png",
+            }
+
+            async with session.post(chart_url, json=payload) as resp:
+                if resp.status == 200:
+                    return await resp.read()
+
+            return None
+
+        except Exception as exc:
+            logger.error(f"Chart error ({pair}): {exc}")
+            return None

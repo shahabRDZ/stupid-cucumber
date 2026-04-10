@@ -7,7 +7,7 @@ from telethon import events, Button
 
 from app.config import Config
 from app.database import (
-    AlertRepository, LogRepository, SignalRepository, SubscriberRepository,
+    AlertRepository, LogRepository, SettingsRepository, SignalRepository, SubscriberRepository,
 )
 from app.services.market import MarketService
 from app.services.alerts import AlertService
@@ -128,6 +128,7 @@ class SignalBot(BaseTelegramClient):
         signals: SignalRepository,
         logs: LogRepository,
         alerts_repo: AlertRepository,
+        settings: SettingsRepository,
         market: MarketService,
         user_client=None,
     ) -> None:
@@ -136,6 +137,7 @@ class SignalBot(BaseTelegramClient):
         self._signals = signals
         self._logs = logs
         self._alerts_repo = alerts_repo
+        self._settings = settings
         self._market = market
         self._user_client = user_client
         self._alert_service = AlertService(alerts_repo, market)
@@ -183,13 +185,57 @@ class SignalBot(BaseTelegramClient):
                 self._subscribers.deactivate(chat_id)
             return False
 
-    async def broadcast_signal(self, signal_id: int, text: str, media=None) -> int:
+    async def broadcast_signal(self, signal_id: int, text: str, media=None, pair: str = "") -> int:
+        chart_bytes = None
+        # Generate chart if enabled
+        if pair and self._settings.get("chart_enabled", "1") == "1":
+            chart_bytes = await self._market.get_chart_image(pair)
+
+        # Send to subscribers
         subs = self._subscribers.get_active()
-        sent = sum([await self.send_to_user(s.chat_id, text, media) for s in subs])
+        sent = 0
+        for s in subs:
+            if chart_bytes:
+                await self.send_to_user(s.chat_id, text, media=chart_bytes)
+            else:
+                await self.send_to_user(s.chat_id, text, media=media)
+            sent += 1
+
+        # Send to target channel
+        target_ch = self._settings.get("target_channel", "")
+        if target_ch:
+            try:
+                if chart_bytes:
+                    await self._client.send_file(target_ch, chart_bytes, caption=text, parse_mode="html")
+                else:
+                    await self._client.send_message(target_ch, text, parse_mode="html")
+                self._logger.info(f"Signal #{signal_id} → channel @{target_ch}")
+            except Exception as exc:
+                self._logger.warning(f"Channel send failed @{target_ch}: {exc}")
+
         self._signals.mark_sent(signal_id, sent)
-        self._logger.info(f"Signal #{signal_id} → {sent}/{len(subs)}")
-        self._logs.add("INFO", "bot", f"Signal #{signal_id} sent to {sent}/{len(subs)}")
+        self._logger.info(f"Signal #{signal_id} → {sent}/{len(subs)} subscribers")
+        self._logs.add("INFO", "bot", f"Signal #{signal_id} sent to {sent}/{len(subs)} + channel")
         return sent
+
+    async def send_approval_request(self, signal_id: int, text: str, pair: str = "") -> None:
+        """Send signal to admins for approval with Approve/Reject buttons."""
+        buttons = [
+            [
+                Button.inline("✅ Approve", data=f"approve_{signal_id}".encode()),
+                Button.inline("❌ Reject", data=f"reject_{signal_id}".encode()),
+            ]
+        ]
+        admin_msg = f"🔔 <b>New Signal — Awaiting Approval</b>\n\n{text}"
+        for admin_id in self._config.admin_ids:
+            try:
+                await self._client.send_message(admin_id, admin_msg, parse_mode="html", buttons=buttons)
+            except Exception as exc:
+                self._logger.warning(f"Approval msg failed → {admin_id}: {exc}")
+        # Store pair for later use when approved
+        self._pending_pairs[signal_id] = pair
+
+    _pending_pairs: dict[int, str] = {}
 
     # ── handlers ──
 
@@ -257,11 +303,41 @@ class SignalBot(BaseTelegramClient):
                 self._subscribers.set_lang(event.chat_id, code)
                 await event.answer("✅")
                 await event.delete()
-                await cli.send_message(
-                    event.chat_id,
-                    f"✅ Language: {_LANGS[code]}",
-                    buttons=_kb(code),
-                )
+                await cli.send_message(event.chat_id, f"✅ Language: {_LANGS[code]}", buttons=_kb(code))
+
+        # ── Approval callbacks ──
+
+        @cli.on(events.CallbackQuery(pattern=rb"approve_(\d+)"))
+        async def _approve(event):
+            if event.chat_id not in set(self._config.admin_ids):
+                await event.answer("❌ Not authorized")
+                return
+            signal_id = int(event.data.decode().split("_")[1])
+            signals = self._signals.get_many(limit=1, offset=0)
+            # Find the signal
+            from app.database import Database
+            sig = None
+            for s in self._signals.get_many(limit=50):
+                if s.id == signal_id:
+                    sig = s
+                    break
+            if sig and sig.formatted_text:
+                pair = self._pending_pairs.pop(signal_id, "")
+                await self.broadcast_signal(signal_id, sig.formatted_text, pair=pair)
+                await event.answer("✅ Approved & Sent!")
+                await event.edit(f"✅ <b>APPROVED</b>\n\n{sig.formatted_text}", parse_mode="html")
+            else:
+                await event.answer("⚠️ Signal not found")
+
+        @cli.on(events.CallbackQuery(pattern=rb"reject_(\d+)"))
+        async def _reject(event):
+            if event.chat_id not in set(self._config.admin_ids):
+                await event.answer("❌ Not authorized")
+                return
+            signal_id = int(event.data.decode().split("_")[1])
+            self._pending_pairs.pop(signal_id, None)
+            await event.answer("❌ Rejected")
+            await event.edit("❌ <b>REJECTED</b> — Signal was not sent.", parse_mode="html")
 
         # ── Price command ──
 

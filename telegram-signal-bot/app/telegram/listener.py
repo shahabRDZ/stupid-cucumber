@@ -15,8 +15,8 @@ from app.models import ParsedSignal
 from app.parser import SignalParser
 from app.telegram.base import BaseTelegramClient
 
-# Callback type: (signal_id, formatted_text, media) -> None
-SignalCallback = Callable[[int, str, object], Awaitable[None]]
+# Callback type: (signal_id, formatted_text, media, pair) -> None
+SignalCallback = Callable[[int, str, object, str], Awaitable[None]]
 MessageCallback = Callable[[dict], Awaitable[None]]
 
 
@@ -118,4 +118,4 @@ class ChannelListener(BaseTelegramClient):
                 self._logs.add("INFO", "parser", f"Signal: {parsed.pair} {parsed.direction}")
 
                 if self._settings.send_enabled and self._on_signal:
-                    await self._on_signal(signal_id, formatted, event.message.media)
+                    await self._on_signal(signal_id, formatted, event.message.media, parsed.pair)

@@ -60,7 +60,7 @@ class Application:
         )
         self.bot = SignalBot(
             config, self.subscribers, self.signals,
-            self.logs, self.alerts, self.market,
+            self.logs, self.alerts, self.settings, self.market,
             user_client=self.listener.client,
         )
 
@@ -115,8 +115,17 @@ class Application:
 
     # ── internal callbacks ──
 
-    async def _handle_signal(self, signal_id: int, formatted: str, media) -> None:
-        sent = await self.bot.broadcast_signal(signal_id, formatted, media)
+    async def _handle_signal(self, signal_id: int, formatted: str, media, pair: str = "") -> None:
+        approval_mode = self.settings.get("approval_mode", "0") == "1"
+
+        if approval_mode:
+            # Send to admin for approval instead of broadcasting
+            await self.bot.send_approval_request(signal_id, formatted, pair)
+            self.logs.add("INFO", "app", f"Signal #{signal_id} sent for admin approval")
+        else:
+            # Auto-broadcast
+            await self.bot.broadcast_signal(signal_id, formatted, media, pair)
+
         latest = self.signals.get_many(limit=1)
         if latest:
             await self.web.notify_signal(latest[0].to_dict())

@@ -316,10 +316,23 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
           <label class="switch"><input type="checkbox" id="set-send" onchange="saveSetting('send_enabled',this.checked?'1':'0')"><span class="slider"></span></label>
           <span>Send (forward to subscribers)</span>
         </div>
+        <div class="toggle">
+          <label class="switch"><input type="checkbox" id="set-approval" onchange="saveSetting('approval_mode',this.checked?'1':'0')"><span class="slider"></span></label>
+          <span>Approval Mode (admin confirms before sending)</span>
+        </div>
+        <div class="toggle">
+          <label class="switch"><input type="checkbox" id="set-chart" onchange="saveSetting('chart_enabled',this.checked?'1':'0')"><span class="slider"></span></label>
+          <span>Chart (send price chart with signal)</span>
+        </div>
         <div class="form-group" style="margin-top:20px">
+          <label>Target Channel (signals also sent here)</label>
+          <input id="set-channel" placeholder="@channelname or leave empty" dir="ltr" style="max-width:300px">
+          <button class="btn btn-sm btn-primary" onclick="saveChannel()" style="margin-top:6px">Save</button>
+        </div>
+        <div class="form-group" style="margin-top:16px">
           <label>Message Template</label>
           <textarea id="set-template" dir="ltr"></textarea>
-          <small style="color:var(--text3)">Use {signal} as placeholder</small>
+          <small style="color:var(--text3)">Use {signal} and {time} as placeholders</small>
         </div>
         <button class="btn btn-primary" onclick="saveTemplate()" style="margin-top:10px">Save Template</button>
       </div></div>
@@ -444,9 +457,18 @@ async function loadSubscribers(){
 }
 
 // Settings
-async function loadSettings(){const s=await api('/api/settings');document.getElementById('set-filter').checked=s.filter_enabled==='1';document.getElementById('set-send').checked=s.send_enabled==='1';document.getElementById('set-template').value=s.message_template||''}
+async function loadSettings(){
+  const s=await api('/api/settings');
+  document.getElementById('set-filter').checked=s.filter_enabled==='1';
+  document.getElementById('set-send').checked=s.send_enabled==='1';
+  document.getElementById('set-approval').checked=s.approval_mode==='1';
+  document.getElementById('set-chart').checked=s.chart_enabled==='1';
+  document.getElementById('set-channel').value=s.target_channel||'';
+  document.getElementById('set-template').value=s.message_template||'';
+}
 async function saveSetting(k,v){await api('/api/settings',{method:'PUT',body:JSON.stringify({key:k,value:v})})}
 async function saveTemplate(){await saveSetting('message_template',document.getElementById('set-template').value);alert('Saved!')}
+async function saveChannel(){await saveSetting('target_channel',document.getElementById('set-channel').value.trim());alert('Channel saved!')}
 
 // Logs
 async function loadLogs(){const lv=document.getElementById('log-filter').value;const logs=await api('/api/logs?limit=200'+(lv?'&level='+lv:''));document.getElementById('logs-table').innerHTML=logs.map(l=>`<tr><td><span class="badge ${l.level?.toLowerCase()}">${l.level}</span></td><td>${l.source||'-'}</td><td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.message||'')}</td><td dir="ltr">${fTime(l.created_at)}</td></tr>`).join('')}

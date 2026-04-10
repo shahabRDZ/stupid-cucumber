@@ -121,7 +121,10 @@ CREATE TABLE IF NOT EXISTS price_alerts (
 _DEFAULT_SETTINGS = {
     "filter_enabled": "1",
     "send_enabled": "1",
-    "message_template": "━━━━━━━━━━━━━━━━━━━━\n{signal}\n━━━━━━━━━━━━━━━━━━━━\n📡 Signal Bot",
+    "approval_mode": "0",
+    "target_channel": "",
+    "chart_enabled": "1",
+    "message_template": "━━━━━━━━━━━━━━━━━━━━\n{signal}\n━━━━━━━━━━━━━━━━━━━━\n📅 {time}\n📡 Signal Bot",
 }
 
 
