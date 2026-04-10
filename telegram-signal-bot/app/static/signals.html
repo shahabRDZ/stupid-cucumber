@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Forex Signals</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --surface2: #242836;
+  --border: #2d3148; --text: #e1e4ed; --text2: #8b8fa3;
+  --green: #00b894; --red: #e17055; --blue: #74b9ff;
+}
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+
+.header { text-align: center; padding: 30px 0; }
+.header h1 { font-size: 28px; margin-bottom: 8px; }
+.header p { color: var(--text2); }
+.live { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); padding: 6px 16px; border-radius: 20px; font-size: 13px; margin-top: 12px; }
+.live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.signals-grid { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+.signal-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; transition: .2s; }
+.signal-card:hover { border-color: var(--blue); }
+.signal-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.pair { font-size: 18px; font-weight: 700; }
+.dir { padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+.dir.buy { background: rgba(0,184,148,.15); color: var(--green); }
+.dir.sell { background: rgba(225,112,85,.15); color: var(--red); }
+
+.signal-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1px; background: var(--border); }
+.signal-body .cell { background: var(--surface); padding: 12px 18px; }
+.cell .label { font-size: 11px; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; }
+.cell .val { font-size: 16px; font-weight: 600; font-family: 'Courier New', monospace; }
+
+.signal-footer { padding: 8px 18px; font-size: 12px; color: var(--text2); display: flex; justify-content: space-between; }
+
+.empty { text-align: center; padding: 60px; color: var(--text2); }
+
+@media (max-width: 600px) {
+  .signal-body { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📡 Live Forex Signals</h1>
+  <p>Real-time trading signals</p>
+  <div class="live"><span class="live-dot"></span> Live</div>
+</div>
+
+<div class="signals-grid" id="grid"></div>
+
+<script>
+const grid = document.getElementById('grid');
+
+async function loadSignals() {
+  try {
+    const r = await fetch('/api/public/signals?limit=30');
+    const signals = await r.json();
+    if (!signals.length) { grid.innerHTML = '<div class="empty">No signals yet. Stay tuned!</div>'; return; }
+    grid.innerHTML = signals.map(s => `
+      <div class="signal-card">
+        <div class="signal-top">
+          <span class="pair">${s.pair || 'UNKNOWN'}</span>
+          <span class="dir ${(s.direction||'').toLowerCase()}">${s.direction || '?'}</span>
+        </div>
+        <div class="signal-body">
+          <div class="cell"><div class="label">Entry</div><div class="val">${s.entry_price || '-'}</div></div>
+          <div class="cell"><div class="label">TP1</div><div class="val">${s.tp1 || '-'}</div></div>
+          <div class="cell"><div class="label">TP2</div><div class="val">${s.tp2 || '-'}</div></div>
+          <div class="cell"><div class="label">SL</div><div class="val" style="color:var(--red)">${s.sl || '-'}</div></div>
+        </div>
+        <div class="signal-footer">
+          <span>Status: ${s.status || 'active'}</span>
+          <span>📅 ${fmtDate(s.created_at)} ⏰ ${fmtClock(s.created_at)}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) { console.error(e); }
+}
+
+function fmtDate(t) {
+  if (!t) return '-';
+  const d = new Date(t);
+  return d.toLocaleDateString('fa-IR', {year:'numeric', month:'2-digit', day:'2-digit'});
+}
+function fmtClock(t) {
+  if (!t) return '-';
+  const d = new Date(t);
+  return d.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+function fmtTime(t) {
+  if (!t) return '';
+  const d = new Date(t);
+  return d.toLocaleDateString('en') + ' ' + d.toLocaleTimeString('en', {hour:'2-digit', minute:'2-digit'});
+}
+
+// WebSocket for real-time updates
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(proto + '//' + location.host + '/ws');
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'new_signal') loadSignals();
+  };
+  ws.onclose = () => setTimeout(connectWS, 3000);
+  setInterval(() => { if (ws.readyState === 1) ws.send('ping'); }, 30000);
+}
+
+loadSignals();
+connectWS();
+// Also refresh every 15 seconds as fallback
+setInterval(loadSignals, 15000);
+</script>
+</body>
+</html>

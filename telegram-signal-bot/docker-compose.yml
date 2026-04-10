@@ -1,0 +1,14 @@
+services:
+  signal-bot:
+    build: .
+    container_name: forex-signal-bot
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./bot_data.db:/app/bot_data.db
+      - ./bot.log:/app/bot.log
+      - ./user_session.session:/app/user_session.session
+      - ./bot_session.session:/app/bot_session.session

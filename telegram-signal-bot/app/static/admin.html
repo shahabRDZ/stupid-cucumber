@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Signal Bot — Admin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;--surface:#111827;--surface2:#1e293b;
+  --border:#1e293b;--border2:#334155;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --primary:#6366f1;--primary2:#818cf8;--primary-bg:rgba(99,102,241,.12);
+  --green:#10b981;--green-bg:rgba(16,185,129,.12);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.12);
+  --orange:#f59e0b;--orange-bg:rgba(245,158,11,.12);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.12);
+  --radius:12px;--radius-sm:8px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:var(--primary2);text-decoration:none}
+
+/* ── Login ── */
+.login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.login-box{background:var(--surface);padding:32px;border-radius:20px;width:100%;max-width:380px;border:1px solid var(--border2)}
+.login-box h2{text-align:center;margin-bottom:8px;font-size:22px}
+.login-box p{text-align:center;color:var(--text2);margin-bottom:24px;font-size:14px}
+.login-box input{width:100%;padding:14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-size:15px;margin-bottom:14px;direction:ltr;outline:none;transition:.2s}
+.login-box input:focus{border-color:var(--primary)}
+.login-box button{width:100%;padding:14px;background:var(--primary);border:none;border-radius:var(--radius-sm);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:.2s}
+.login-box button:hover{background:var(--primary2)}
+.login-error{color:var(--red);text-align:center;margin-top:10px;font-size:13px;display:none}
+.hidden{display:none!important}
+
+/* ── Layout ── */
+.app{display:flex;min-height:100vh}
+
+/* Sidebar */
+.sidebar{width:260px;background:var(--surface);border-left:1px solid var(--border);position:fixed;top:0;right:0;height:100vh;display:flex;flex-direction:column;z-index:100;transition:transform .3s}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-header h1{font-size:17px;font-weight:700;color:var(--primary2)}
+.sidebar-header .dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.sidebar nav{flex:1;overflow-y:auto;padding:8px 0}
+.sidebar nav a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--text2);font-size:14px;cursor:pointer;transition:.15s;border-right:3px solid transparent}
+.sidebar nav a:hover{color:var(--text);background:var(--surface2)}
+.sidebar nav a.active{color:var(--primary2);background:var(--primary-bg);border-right-color:var(--primary)}
+.sidebar nav a .icon{font-size:18px;width:24px;text-align:center}
+
+/* Mobile hamburger */
+.hamburger{display:none;position:fixed;top:16px;right:16px;z-index:200;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;font-size:20px;-webkit-tap-highlight-color:transparent}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+
+/* Mobile bottom tab bar */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding:6px 0;padding-bottom:env(safe-area-inset-bottom,6px)}
+.bottom-nav-inner{display:flex;justify-content:space-around;align-items:center}
+.bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text3);font-size:10px;padding:6px 4px;-webkit-tap-highlight-color:transparent;cursor:pointer;min-width:50px;text-decoration:none}
+.bottom-nav a.active{color:var(--primary2)}
+.bottom-nav a .bnav-icon{font-size:20px}
+
+/* More menu (overlay from bottom nav) */
+.more-menu{display:none;position:fixed;bottom:60px;left:10px;right:10px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);z-index:250;padding:8px 0}
+.more-menu.open{display:block}
+.more-menu a{display:flex;align-items:center;gap:12px;padding:14px 20px;color:var(--text2);font-size:14px;-webkit-tap-highlight-color:transparent;cursor:pointer}
+.more-menu a:hover,.more-menu a:active{background:var(--surface2);color:var(--text)}
+.more-overlay{display:none;position:fixed;inset:0;z-index:240}
+.more-overlay.open{display:block}
+
+/* Main */
+.main{margin-right:260px;flex:1;padding:24px;max-width:100%}
+.main h2{font-size:20px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+
+/* ── Cards ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:18px;border:1px solid var(--border)}
+.stat-card .label{font-size:12px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.stat-card .value{font-size:26px;font-weight:800}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.blue{color:var(--blue)}
+.stat-card .value.orange{color:var(--orange)}
+.stat-card .value.purple{color:var(--primary2)}
+
+/* ── Panel ── */
+.panel{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:20px;overflow:hidden}
+.panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.panel-header h3{font-size:15px;font-weight:600}
+.panel-body{padding:16px 20px;overflow-x:auto}
+.page{display:none}.page.active{display:block}
+
+/* ── Tables ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--border);font-size:13px;white-space:nowrap}
+th{color:var(--text3);font-weight:600;background:var(--surface2);font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+tr:hover{background:rgba(255,255,255,.02)}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.badge.buy{background:var(--green-bg);color:var(--green)}
+.badge.sell{background:var(--red-bg);color:var(--red)}
+.badge.active{background:var(--green-bg);color:var(--green)}
+.badge.inactive{background:rgba(100,116,139,.15);color:var(--text3)}
+.badge.signal{background:var(--primary-bg);color:var(--primary2)}
+.badge.info{background:var(--blue-bg);color:var(--blue)}
+.badge.error{background:var(--red-bg);color:var(--red)}
+.badge.warning{background:var(--orange-bg);color:var(--orange)}
+.badge.high{background:var(--red-bg);color:var(--red)}
+.badge.medium{background:var(--orange-bg);color:var(--orange)}
+
+/* ── Buttons ── */
+.btn{padding:8px 16px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary2)}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.8}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:6px}
+
+/* ── Inputs ── */
+input,textarea,select{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:10px 14px;font-size:14px;width:100%;outline:none;transition:.2s}
+input:focus,textarea:focus,select:focus{border-color:var(--primary)}
+textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:6px;color:var(--text2);font-size:13px;font-weight:500}
+
+/* Toggle */
+.toggle{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.switch{position:relative;width:48px;height:26px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--border2);border-radius:26px;cursor:pointer;transition:.3s}
+.slider::before{content:'';position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;bottom:3px;left:3px;transition:.3s}
+.switch input:checked+.slider{background:var(--green)}
+.switch input:checked+.slider::before{transform:translateX(22px)}
+
+/* Add form */
+.add-form{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.add-form input{flex:1;min-width:150px}
+
+/* Price ticker */
+.price-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.price-card{background:var(--surface2);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border)}
+.price-card .pair{font-weight:700;font-size:15px;margin-bottom:6px}
+.price-card .price{font-size:22px;font-weight:800;font-family:'Courier New',monospace;direction:ltr}
+.price-card .change{font-size:13px;margin-top:4px}
+.price-card .change.up{color:var(--green)}
+.price-card .change.down{color:var(--red)}
+
+/* Sentiment bar */
+.sent-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:6px 0}
+.sent-bar .buy-bar{background:var(--green)}
+.sent-bar .sell-bar{background:var(--red)}
+
+/* Calendar */
+.cal-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.cal-item:last-child{border:none}
+.cal-item .cal-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.cal-item .cal-title{font-weight:600;font-size:14px}
+.cal-item .cal-data{font-size:13px;color:var(--text2)}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .sidebar{display:none}
+  .hamburger{display:none}
+  .bottom-nav{display:block}
+  .main{margin-right:0;padding:16px;padding-top:16px;padding-bottom:80px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat-card .value{font-size:22px}
+  table{min-width:500px}
+  .sidebar nav a{-webkit-tap-highlight-color:transparent}
+}
+@media(max-width:480px){
+  .stats{grid-template-columns:1fr 1fr}
+  .stat-card{padding:14px}
+  .stat-card .value{font-size:20px}
+  .price-grid{grid-template-columns:1fr}
+  .add-form{flex-direction:column}
+  .add-form input{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>📡 Signal Bot</h2>
+    <p>Admin Dashboard</p>
+    <input type="password" id="loginPass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">Login</button>
+    <div class="login-error" id="loginError">Wrong password</div>
+  </div>
+</div>
+
+<!-- Bottom Navigation (mobile) -->
+<div class="more-overlay" id="moreOverlay" onclick="closeMore()"></div>
+<div class="more-menu" id="moreMenu">
+  <a onclick="navTo('channels')">📺 Channels</a>
+  <a onclick="navTo('subscribers')">👥 Subscribers</a>
+  <a onclick="navTo('settings')">⚙️ Settings</a>
+  <a onclick="navTo('logs')">📋 Logs</a>
+</div>
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a class="active" data-page="dashboard" onclick="navTo('dashboard')"><span class="bnav-icon">📊</span>Home</a>
+    <a data-page="market" onclick="navTo('market')"><span class="bnav-icon">💹</span>Market</a>
+    <a data-page="signals" onclick="navTo('signals')"><span class="bnav-icon">📈</span>Signals</a>
+    <a data-page="messages" onclick="navTo('messages')"><span class="bnav-icon">💬</span>Messages</a>
+    <a onclick="toggleMore()"><span class="bnav-icon">☰</span>More</a>
+  </div>
+</nav>
+
+<!-- App -->
+<div class="app hidden" id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="dot"></span>
+      <h1>Signal Bot</h1>
+    </div>
+    <nav>
+      <a class="active" data-page="dashboard"><span class="icon">📊</span>Dashboard</a>
+      <a data-page="market"><span class="icon">💹</span>Market</a>
+      <a data-page="signals"><span class="icon">📈</span>Signals</a>
+      <a data-page="messages"><span class="icon">💬</span>Messages</a>
+      <a data-page="channels"><span class="icon">📺</span>Channels</a>
+      <a data-page="subscribers"><span class="icon">👥</span>Subscribers</a>
+      <a data-page="settings"><span class="icon">⚙️</span>Settings</a>
+      <a data-page="logs"><span class="icon">📋</span>Logs</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <h2>Dashboard <span class="dot" style="margin-right:4px"></span></h2>
+      <div class="stats">
+        <div class="stat-card"><div class="label">Active Users</div><div class="value green" id="s-active">-</div></div>
+        <div class="stat-card"><div class="label">Total Signals</div><div class="value blue" id="s-signals">-</div></div>
+        <div class="stat-card"><div class="label">Today</div><div class="value orange" id="s-today">-</div></div>
+        <div class="stat-card"><div class="label">Channels</div><div class="value purple" id="s-channels">-</div></div>
+        <div class="stat-card"><div class="label">Messages</div><div class="value" id="s-messages">-</div></div>
+        <div class="stat-card">
+          <div class="label">System</div>
+          <div style="margin-top:8px"><span id="s-send" class="badge active">Send: ON</span> <span id="s-filter" class="badge active">Filter: ON</span></div>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-header"><h3>Latest Signals</h3></div><div class="panel-body"><div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Pair</th><th>Dir</th><th>Entry</th><th>TP1</th><th>SL</th><th>Sent</th><th>Time</th></tr></thead>
+        <tbody id="dash-signals"></tbody></table>
+      </div></div></div>
+    </div>
+
+    <!-- Market -->
+    <div class="page" id="page-market">
+      <h2>💹 Live Market</h2>
+      <div class="panel"><div class="panel-header"><h3>Live Prices</h3><button class="btn btn-sm btn-primary" onclick="loadMarket()">Refresh</button></div>
+        <div class="panel-body"><div class="price-grid" id="prices-grid"></div></div></div>
+
+      <div class="panel"><div class="panel-header"><h3>🧭 Market Sentiment</h3></div>
+        <div class="panel-body" id="sentiment-list"></div></div>
+
+      <div class="panel"><div class="panel-header"><h3>📅 Economic Calendar</h3></div>
+        <div class="panel-body" id="calendar-list"></div></div>
+    </div>
+
+    <!-- Signals -->
+    <div class="page" id="page-signals">
+      <h2>Signals</h2>
+      <div class="panel"><div class="panel-header"><h3>All Signals</h3></div><div class="panel-body"><div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Pair</th><th>Dir</th><th>Entry</th><th>TP1</th><th>TP2</th><th>TP3</th><th>SL</th><th>Status</th><th>Sent</th><th>Time</th></tr></thead>
+        <tbody id="signals-table"></tbody></table>
+      </div></div></div>
+    </div>
+
+    <!-- Messages -->
+    <div class="page" id="page-messages">
+      <h2>Raw Messages</h2>
+      <div class="panel"><div class="panel-header"><h3>Received</h3></div><div class="panel-body"><div class="table-wrap">
+        <table><thead><tr><th>#</th><th>Channel</th><th>Signal?</th><th>Text</th><th>Time</th></tr></thead>
+        <tbody id="messages-table"></tbody></table>
+      </div></div></div>
+    </div>
+
+    <!-- Channels -->
+    <div class="page" id="page-channels">
+      <h2>Channels</h2>
+      <div class="panel"><div class="panel-header"><h3>Source Channels</h3></div><div class="panel-body">
+        <div class="add-form">
+          <input id="ch-username" placeholder="Username (e.g. fxleaders)" dir="ltr">
+          <input id="ch-title" placeholder="Title" style="max-width:200px">
+          <button class="btn btn-primary" onclick="addChannel()">Add</button>
+        </div>
+        <div class="table-wrap">
+        <table><thead><tr><th>Username</th><th>Title</th><th>Status</th><th>Added</th><th>Actions</th></tr></thead>
+        <tbody id="channels-table"></tbody></table>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- Subscribers -->
+    <div class="page" id="page-subscribers">
+      <h2>Subscribers</h2>
+      <div class="panel"><div class="panel-header"><h3>Users</h3><span id="sub-count" class="badge info">-</span></div><div class="panel-body"><div class="table-wrap">
+        <table><thead><tr><th>ID</th><th>Username</th><th>Name</th><th>Lang</th><th>Status</th><th>Admin</th><th>Joined</th></tr></thead>
+        <tbody id="subs-table"></tbody></table>
+      </div></div></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="page" id="page-settings">
+      <h2>Settings</h2>
+      <div class="panel"><div class="panel-header"><h3>System</h3></div><div class="panel-body">
+        <div class="toggle">
+          <label class="switch"><input type="checkbox" id="set-filter" onchange="saveSetting('filter_enabled',this.checked?'1':'0')"><span class="slider"></span></label>
+          <span>Filter (only forward signals)</span>
+        </div>
+        <div class="toggle">
+          <label class="switch"><input type="checkbox" id="set-send" onchange="saveSetting('send_enabled',this.checked?'1':'0')"><span class="slider"></span></label>
+          <span>Send (forward to subscribers)</span>
+        </div>
+        <div class="form-group" style="margin-top:20px">
+          <label>Message Template</label>
+          <textarea id="set-template" dir="ltr"></textarea>
+          <small style="color:var(--text3)">Use {signal} as placeholder</small>
+        </div>
+        <button class="btn btn-primary" onclick="saveTemplate()" style="margin-top:10px">Save Template</button>
+      </div></div>
+    </div>
+
+    <!-- Logs -->
+    <div class="page" id="page-logs">
+      <h2>Logs</h2>
+      <div class="panel"><div class="panel-header"><h3>System Logs</h3>
+        <select id="log-filter" onchange="loadLogs()" style="width:120px">
+          <option value="">All</option><option value="INFO">INFO</option><option value="WARNING">WARNING</option><option value="ERROR">ERROR</option>
+        </select>
+      </div><div class="panel-body"><div class="table-wrap">
+        <table><thead><tr><th>Level</th><th>Source</th><th>Message</th><th>Time</th></tr></thead>
+        <tbody id="logs-table"></tbody></table>
+      </div></div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let TOKEN=localStorage.getItem('token')||'';
+if(TOKEN){showApp()}
+
+function doLogin(){
+  const p=document.getElementById('loginPass').value;
+  fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})})
+    .then(r=>{if(!r.ok)throw 0;return r.json()})
+    .then(d=>{TOKEN=d.token;localStorage.setItem('token',TOKEN);showApp()})
+    .catch(()=>{document.getElementById('loginError').style.display='block'})
+}
+function showApp(){document.getElementById('loginOverlay').classList.add('hidden');document.getElementById('app').classList.remove('hidden');loadDashboard();connectWS()}
+function headers(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}
+async function api(p,o={}){const r=await fetch(p,{headers:headers(),...o});if(r.status===401){localStorage.removeItem('token');location.reload()}return r.json()}
+
+// Navigation
+const loaders={dashboard:loadDashboard,market:loadMarket,signals:loadSignals,messages:loadMessages,channels:loadChannels,subscribers:loadSubscribers,settings:loadSettings,logs:loadLogs};
+
+function navTo(page){
+  // Update sidebar
+  document.querySelectorAll('.sidebar nav a').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`.sidebar nav a[data-page="${page}"]`)?.classList.add('active');
+  // Update bottom nav
+  document.querySelectorAll('.bottom-nav a').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`.bottom-nav a[data-page="${page}"]`)?.classList.add('active');
+  // Show page
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  // Close menus
+  closeMore();
+  // Load data
+  loaders[page]?.();
+}
+
+function toggleMore(){document.getElementById('moreMenu').classList.toggle('open');document.getElementById('moreOverlay').classList.toggle('open')}
+function closeMore(){document.getElementById('moreMenu').classList.remove('open');document.getElementById('moreOverlay').classList.remove('open')}
+
+// Sidebar clicks (desktop)
+document.querySelectorAll('.sidebar nav a').forEach(a=>{
+  a.addEventListener('click',()=>navTo(a.dataset.page))
+});
+
+// Dashboard
+async function loadDashboard(){
+  const d=await api('/api/dashboard');
+  document.getElementById('s-active').textContent=d.active_subscribers;
+  document.getElementById('s-signals').textContent=d.total_signals;
+  document.getElementById('s-today').textContent=d.signals_today;
+  document.getElementById('s-channels').textContent=d.active_channels;
+  document.getElementById('s-messages').textContent=d.total_raw_messages;
+  const se=document.getElementById('s-send');se.textContent='Send: '+(d.send_enabled?'ON':'OFF');se.className='badge '+(d.send_enabled?'active':'inactive');
+  const fe=document.getElementById('s-filter');fe.textContent='Filter: '+(d.filter_enabled?'ON':'OFF');fe.className='badge '+(d.filter_enabled?'active':'inactive');
+  const sigs=await api('/api/signals?limit=10');
+  document.getElementById('dash-signals').innerHTML=sigs.map(s=>`<tr><td>${s.id}</td><td><b>${s.pair}</b></td><td><span class="badge ${s.direction?.toLowerCase()}">${s.direction}</span></td><td dir="ltr">${s.entry_price||'-'}</td><td dir="ltr">${s.tp1||'-'}</td><td dir="ltr">${s.sl||'-'}</td><td>${s.sent_count||0}</td><td dir="ltr">${fTime(s.created_at)}</td></tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--text3)">No signals yet</td></tr>';
+}
+
+// Market
+async function loadMarket(){
+  const [prices,sentiment,calendar]=await Promise.all([api('/api/market/prices'),api('/api/market/sentiment'),api('/api/market/calendar')]);
+  document.getElementById('prices-grid').innerHTML=prices.map(p=>{
+    const cls=p.change>=0?'up':'down';const arrow=p.change>=0?'▲':'▼';
+    return `<div class="price-card"><div class="pair">${p.pair}</div><div class="price">${p.price}</div><div class="change ${cls}">${arrow} ${p.change_pct>0?'+':''}${p.change_pct.toFixed(2)}%</div></div>`
+  }).join('')||'<p style="color:var(--text3)">Loading...</p>';
+
+  document.getElementById('sentiment-list').innerHTML=sentiment.map(s=>{
+    const icon=s.trend==='bullish'?'🟢':s.trend==='bearish'?'🔴':'⚪';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)"><b style="width:80px">${s.pair}</b><div style="flex:1"><div class="sent-bar"><div class="buy-bar" style="width:${s.buyers_pct}%"></div><div class="sell-bar" style="width:${s.sellers_pct}%"></div></div></div><span style="color:var(--green);width:50px">${s.buyers_pct}%</span><span style="color:var(--red);width:50px">${s.sellers_pct}%</span>${icon}</div>`
+  }).join('')||'';
+
+  document.getElementById('calendar-list').innerHTML=calendar.slice(0,20).map(e=>{
+    return `<div class="cal-item"><div class="cal-head"><span class="badge ${e.impact?.toLowerCase()}">${e.impact}</span><b>${e.currency}</b><span class="cal-title">${e.event}</span></div><div class="cal-data">F: ${e.forecast} | P: ${e.previous} | A: ${e.actual} — ${e.time?.substring(0,16)||''}</div></div>`
+  }).join('')||'<p style="color:var(--text3)">No major events</p>';
+}
+
+// Signals
+async function loadSignals(){
+  const sigs=await api('/api/signals?limit=100');
+  document.getElementById('signals-table').innerHTML=sigs.map(s=>`<tr><td>${s.id}</td><td><b>${s.pair}</b></td><td><span class="badge ${s.direction?.toLowerCase()}">${s.direction}</span></td><td dir="ltr">${s.entry_price||'-'}</td><td dir="ltr">${s.tp1||'-'}</td><td dir="ltr">${s.tp2||'-'}</td><td dir="ltr">${s.tp3||'-'}</td><td dir="ltr">${s.sl||'-'}</td><td><span class="badge ${s.status}">${s.status}</span></td><td>${s.sent_count||0}</td><td dir="ltr">${fTime(s.created_at)}</td></tr>`).join('');
+}
+
+// Messages
+async function loadMessages(){
+  const msgs=await api('/api/messages?limit=100');
+  document.getElementById('messages-table').innerHTML=msgs.map(m=>`<tr><td>${m.id}</td><td dir="ltr">@${m.channel_username||'?'}</td><td>${m.is_signal?'<span class="badge signal">Signal</span>':'-'}</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" dir="ltr">${esc(m.text?.substring(0,120)||'')}</td><td dir="ltr">${fTime(m.created_at)}</td></tr>`).join('');
+}
+
+// Channels
+async function loadChannels(){
+  const chs=await api('/api/channels');
+  document.getElementById('channels-table').innerHTML=chs.map(c=>`<tr><td dir="ltr">@${c.username}</td><td>${c.title||'-'}</td><td><span class="badge ${c.is_active?'active':'inactive'}">${c.is_active?'Active':'Off'}</span></td><td dir="ltr">${fTime(c.added_at)}</td><td><button class="btn btn-sm btn-primary" onclick="toggleCh('${c.username}',${!c.is_active})">${c.is_active?'Disable':'Enable'}</button> <button class="btn btn-sm btn-danger" onclick="deleteCh('${c.username}')">Delete</button></td></tr>`).join('');
+}
+async function addChannel(){const u=document.getElementById('ch-username').value.trim();const t=document.getElementById('ch-title').value.trim();if(!u)return;await api('/api/channels',{method:'POST',body:JSON.stringify({username:u,title:t||u})});document.getElementById('ch-username').value='';document.getElementById('ch-title').value='';loadChannels()}
+async function toggleCh(u,a){await api(`/api/channels/${u}/toggle?active=${a}`,{method:'PUT'});loadChannels()}
+async function deleteCh(u){if(!confirm('Delete @'+u+'?'))return;await api(`/api/channels/${u}`,{method:'DELETE'});loadChannels()}
+
+// Subscribers
+async function loadSubscribers(){
+  const[subs,cnt]=await Promise.all([api('/api/subscribers'),api('/api/subscribers/count')]);
+  document.getElementById('sub-count').textContent=`${cnt.active} / ${cnt.total}`;
+  document.getElementById('subs-table').innerHTML=subs.map(s=>`<tr><td dir="ltr">${s.chat_id}</td><td dir="ltr">@${s.username||'-'}</td><td>${s.first_name||'-'}</td><td>${s.lang}</td><td><span class="badge ${s.is_active?'active':'inactive'}">${s.is_active?'Active':'Off'}</span></td><td>${s.is_admin?'✅':'-'}</td><td dir="ltr">${fTime(s.joined_at)}</td></tr>`).join('');
+}
+
+// Settings
+async function loadSettings(){const s=await api('/api/settings');document.getElementById('set-filter').checked=s.filter_enabled==='1';document.getElementById('set-send').checked=s.send_enabled==='1';document.getElementById('set-template').value=s.message_template||''}
+async function saveSetting(k,v){await api('/api/settings',{method:'PUT',body:JSON.stringify({key:k,value:v})})}
+async function saveTemplate(){await saveSetting('message_template',document.getElementById('set-template').value);alert('Saved!')}
+
+// Logs
+async function loadLogs(){const lv=document.getElementById('log-filter').value;const logs=await api('/api/logs?limit=200'+(lv?'&level='+lv:''));document.getElementById('logs-table').innerHTML=logs.map(l=>`<tr><td><span class="badge ${l.level?.toLowerCase()}">${l.level}</span></td><td>${l.source||'-'}</td><td style="max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.message||'')}</td><td dir="ltr">${fTime(l.created_at)}</td></tr>`).join('')}
+
+// WebSocket
+let ws;
+function connectWS(){const p=location.protocol==='https:'?'wss:':'ws:';ws=new WebSocket(p+'//'+location.host+'/ws');ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='new_signal'||m.type==='new_message'){const a=document.querySelector('.sidebar nav a.active')?.dataset.page;if(a==='dashboard')loadDashboard();else if(a==='signals')loadSignals();else if(a==='messages')loadMessages()}};ws.onclose=()=>setTimeout(connectWS,3000);setInterval(()=>{if(ws.readyState===1)ws.send('ping')},30000)}
+
+// Helpers
+function fTime(t){if(!t)return'-';const d=new Date(t);return d.toLocaleDateString('en',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'})}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+setInterval(()=>{const a=document.querySelector('.sidebar nav a.active')?.dataset.page;if(a==='dashboard')loadDashboard()},30000);
+</script>
+</body>
+</html>
