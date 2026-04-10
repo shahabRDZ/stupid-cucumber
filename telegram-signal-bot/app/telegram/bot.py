@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 from telethon import events, Button
+from telethon.tl.types import ChannelParticipantsRecent
 
 from app.config import Config
 from app.database import (
@@ -213,6 +214,16 @@ class SignalBot(BaseTelegramClient):
                 f"{_t(lang, 'welcome')}\n\n✅ {_t(lang, 'subscribed')}"
             )
             await event.reply(msg, parse_mode="html", buttons=_kb(lang))
+            # cross-promo: invite to channel
+            ch_un = self._settings.get("channel_username", "")
+            if ch_un:
+                promo = self._settings.get("bot_to_channel_promo", "")
+                if not promo:
+                    promo = "📺 برای دریافت سیگنال در کانال هم عضو شوید!\nJoin our channel for signals too!"
+                await event.respond(
+                    promo, parse_mode="html",
+                    buttons=[[Button.url(f"📺 @{ch_un}", f"https://t.me/{ch_un}")]],
+                )
 
         @cli.on(events.NewMessage(pattern="/stop"))
         async def _stop(event):
@@ -560,6 +571,36 @@ class SignalBot(BaseTelegramClient):
                 return
             lang = self._subscribers.get_lang(event.chat_id)
             await event.reply("📋 /menu", buttons=_kb(lang))
+
+        # cross-promo: when user joins the target channel, welcome with bot link
+        @cli.on(events.ChatAction())
+        async def _channel_join(event):
+            if not event.user_joined and not event.user_added:
+                return
+            target_ch = self._settings.get("target_channel", "")
+            if not target_ch:
+                return
+            try:
+                chat = await event.get_chat()
+                chat_un = getattr(chat, "username", "") or ""
+                # match target channel (could be @name or -100xxx)
+                if not (chat_un and f"@{chat_un}" == target_ch) and str(event.chat_id) != target_ch.lstrip("@"):
+                    return
+            except Exception:
+                return
+            bot_un = self._settings.get("bot_username", "")
+            if not bot_un:
+                return
+            promo = self._settings.get("channel_to_bot_promo", "")
+            if not promo:
+                promo = "🤖 خوش آمدید! برای دریافت سیگنال، قیمت لحظه‌ای و هشدارها ربات ما را استارت کنید!\nWelcome! Start our bot for signals, live prices & alerts!"
+            try:
+                await cli.send_message(
+                    event.chat_id, promo, parse_mode="html",
+                    buttons=[[Button.url(f"🤖 @{bot_un}", f"https://t.me/{bot_un}")]],
+                )
+            except Exception as exc:
+                self._logger.warning(f"Channel welcome failed: {exc}")
 
 
 def _format_signal_time(dt_str: str) -> str:

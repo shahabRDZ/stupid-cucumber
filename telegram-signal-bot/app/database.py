@@ -142,6 +142,8 @@ _DEFAULT_SETTINGS = {
     "channel_signal_header": "📡 <b>Signal #{num}</b>",
     "channel_signal_footer": "💬 Details → @{bot}\n📺 Channel → @{channel}",
     "daily_summary_footer": "💬 @{bot} | 📺 @{channel}",
+    "bot_to_channel_promo": "📺 برای دریافت سیگنال در کانال هم عضو شوید!\nJoin our channel for signals too!",
+    "channel_to_bot_promo": "🤖 خوش آمدید! برای سیگنال، قیمت لحظه‌ای و هشدارها ربات ما را استارت کنید!\nWelcome! Start our bot for signals, live prices & alerts!",
 }
 
 

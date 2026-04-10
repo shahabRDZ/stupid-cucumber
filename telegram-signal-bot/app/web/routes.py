@@ -257,6 +257,7 @@ def create_router(config: Config, repos: dict, market: MarketService, web_server
             "bot_username", "channel_username",
             "channel_signal_header", "channel_signal_footer",
             "daily_summary_footer",
+            "bot_to_channel_promo", "channel_to_bot_promo",
         ]
         return {k: settings.get(k, "") for k in keys}
 

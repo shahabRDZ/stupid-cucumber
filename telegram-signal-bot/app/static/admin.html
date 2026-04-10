@@ -375,6 +375,10 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
         <div class="form-group"><label>Channel Signal Footer — {bot} {channel} placeholders</label><input id="txt-channel_signal_footer" dir="ltr" placeholder="💬 Details → @{bot}"></div>
         <div class="form-group"><label>Daily Summary Footer — {bot} {channel} placeholders</label><input id="txt-daily_summary_footer" dir="ltr" placeholder="💬 @{bot} | 📺 @{channel}"></div>
       </div></div>
+      <div class="panel"><div class="panel-header"><h3>Cross-Promo (Bot ↔ Channel)</h3></div><div class="panel-body">
+        <div class="form-group"><label>Bot → Channel (shown after /start in bot, inviting to join channel)</label><textarea id="txt-bot_to_channel_promo" dir="rtl"></textarea></div>
+        <div class="form-group"><label>Channel → Bot (shown in channel when new member joins)</label><textarea id="txt-channel_to_bot_promo" dir="rtl"></textarea></div>
+      </div></div>
       <button class="btn btn-primary" onclick="saveTexts()" style="margin-top:10px">Save All Texts</button>
     </div>
 
@@ -543,11 +547,11 @@ function logout(){localStorage.removeItem('token');location.reload()}
 // Texts
 async function loadTexts(){
   const t=await api('/api/texts');
-  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta','bot_username','channel_username','channel_signal_header','channel_signal_footer','daily_summary_footer'];
+  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta','bot_username','channel_username','channel_signal_header','channel_signal_footer','daily_summary_footer','bot_to_channel_promo','channel_to_bot_promo'];
   keys.forEach(k=>{const el=document.getElementById('txt-'+k);if(el)el.value=t[k]||''});
 }
 async function saveTexts(){
-  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta','bot_username','channel_username','channel_signal_header','channel_signal_footer','daily_summary_footer'];
+  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta','bot_username','channel_username','channel_signal_header','channel_signal_footer','daily_summary_footer','bot_to_channel_promo','channel_to_bot_promo'];
   const texts={};keys.forEach(k=>{const el=document.getElementById('txt-'+k);if(el)texts[k]=el.value});
   await api('/api/texts',{method:'PUT',body:JSON.stringify({texts})});
   alert('Texts saved!');
