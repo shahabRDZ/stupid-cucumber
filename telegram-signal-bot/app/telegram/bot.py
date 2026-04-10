@@ -8,7 +8,7 @@ from app.config import Config
 from app.database import (
     AlertRepository, LogRepository, SettingsRepository, SignalRepository, SubscriberRepository,
 )
-from app.services.market import MarketService
+from app.services.market import MarketService, calc_risk
 from app.services.alerts import AlertService
 from app.telegram.base import BaseTelegramClient
 
@@ -151,15 +151,23 @@ class SignalBot(BaseTelegramClient):
         if pair and self._settings.get("chart_enabled", "1") == "1":
             chart_bytes = await self._market.get_chart_image(pair)
 
+        # Inline button for lot calculator
+        calc_btn = [[Button.inline("📐 Lot Calculator", data=f"calc_{signal_id}".encode())]]
+
         # Send to subscribers
         subs = self._subscribers.get_active()
         sent = 0
         for s in subs:
-            if chart_bytes:
-                await self.send_to_user(s.chat_id, text, media=chart_bytes)
-            else:
-                await self.send_to_user(s.chat_id, text, media=media)
-            sent += 1
+            try:
+                if chart_bytes:
+                    await self._client.send_file(s.chat_id, chart_bytes, caption=text, parse_mode="html", buttons=calc_btn)
+                else:
+                    await self._client.send_message(s.chat_id, text, parse_mode="html", buttons=calc_btn)
+                sent += 1
+            except Exception as exc:
+                self._logger.warning(f"Send failed → {s.chat_id}: {exc}")
+                if "blocked" in str(exc).lower() or "deactivated" in str(exc).lower():
+                    self._subscribers.deactivate(s.chat_id)
 
         # Send to target channel
         target_ch = self._settings.get("target_channel", "")
@@ -448,6 +456,82 @@ class SignalBot(BaseTelegramClient):
             else:
                 await event.reply(f"❌ Alert #{alert_id} not found.", buttons=_kb(lang))
 
+        # --- Risk Calculator ---
+
+        @cli.on(events.NewMessage(pattern=r"/calc\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)"))
+        async def _calc_full(event):
+            """Full: /calc BALANCE RISK% PAIR ENTRY SL"""
+            lang = self._subscribers.get_lang(event.chat_id)
+            try:
+                balance = float(event.pattern_match.group(1))
+                risk_pct = float(event.pattern_match.group(2).replace("%", ""))
+                pair = event.pattern_match.group(3).upper()
+                entry = float(event.pattern_match.group(4))
+                sl = float(event.pattern_match.group(5))
+            except ValueError:
+                await event.reply("❌ Usage: /calc 1000 2 EURUSD 1.0850 1.0800", buttons=_kb(lang))
+                return
+            r = calc_risk(pair, balance, risk_pct, entry, sl)
+            await event.reply(_format_risk(r), parse_mode="html", buttons=_kb(lang))
+
+        @cli.on(events.NewMessage(pattern=r"/calc\s+(\S+)\s+(\S+)\s+(\S+)\s*$"))
+        async def _calc_short(event):
+            """Short: /calc BALANCE RISK% PAIR → assumes 50 pip SL"""
+            lang = self._subscribers.get_lang(event.chat_id)
+            try:
+                balance = float(event.pattern_match.group(1))
+                risk_pct = float(event.pattern_match.group(2).replace("%", ""))
+                pair = event.pattern_match.group(3).upper()
+            except ValueError:
+                await event.reply("❌ Usage: /calc 1000 2 EURUSD", buttons=_kb(lang))
+                return
+            price_data = await self._market.get_price(pair)
+            if not price_data:
+                await event.reply(f"❌ Pair not found: {pair}", buttons=_kb(lang))
+                return
+            from app.services.market import _PIP_SIZES, _DEFAULT_PIP
+            pip_size = _PIP_SIZES.get(pair, _DEFAULT_PIP)
+            entry = price_data.price
+            sl = entry - (50 * pip_size)  # default 50 pip SL
+            r = calc_risk(pair, balance, risk_pct, entry, sl)
+            await event.reply(_format_risk(r, default_sl=True), parse_mode="html", buttons=_kb(lang))
+
+        @cli.on(events.NewMessage(pattern=r"/calc\s*$"))
+        async def _calc_help(event):
+            lang = self._subscribers.get_lang(event.chat_id)
+            msg = (
+                "📐 <b>Risk Calculator</b>\n\n"
+                "<b>Full:</b>\n<code>/calc 1000 2 EURUSD 1.0850 1.0800</code>\n"
+                "→ Balance $1000, Risk 2%, Entry 1.0850, SL 1.0800\n\n"
+                "<b>Quick:</b>\n<code>/calc 1000 2 EURUSD</code>\n"
+                "→ Uses current price, 50 pip SL\n\n"
+                "📊 Also available as button on each signal!"
+            )
+            await event.reply(msg, parse_mode="html", buttons=_kb(lang))
+
+        # Callback: lot calculator from signal button
+        @cli.on(events.CallbackQuery(pattern=rb"calc_(\d+)"))
+        async def _calc_signal(event):
+            signal_id = int(event.data.decode().split("_")[1])
+            sig = None
+            for s in self._signals.get_many(limit=50):
+                if s.id == signal_id:
+                    sig = s
+                    break
+            if not sig or not sig.entry_price or not sig.sl:
+                await event.answer("⚠️ Signal missing Entry/SL", alert=True)
+                return
+            try:
+                entry = float(sig.entry_price)
+                sl = float(sig.sl)
+            except ValueError:
+                await event.answer("⚠️ Invalid price data", alert=True)
+                return
+            # default balance $1000, risk 2%
+            r = calc_risk(sig.pair, 1000, 2, entry, sl)
+            msg = _format_risk(r, note="💡 Based on $1,000 balance & 2% risk.\nUse /calc to customize.")
+            await event.answer(msg[:200], alert=True)
+
         @cli.on(events.NewMessage(func=lambda e: e.is_private and e.text in _SUBSCRIBE_BTNS))
         async def _btn_sub(event):
             user = await event.get_sender()
@@ -621,3 +705,27 @@ def _sentiment_bar(buyers_pct: float) -> str:
     green = round(buyers_pct / 10)
     red = total - green
     return "🟩" * green + "🟥" * red
+
+
+def _format_risk(r, default_sl: bool = False, note: str = "") -> str:
+    msg = (
+        f"📐 <b>Risk Calculator</b>\n\n"
+        f"💱 Pair: <b>{r.pair}</b>\n"
+        f"💰 Balance: <code>${r.balance:,.0f}</code>\n"
+        f"⚠️ Risk: <code>{r.risk_pct}%</code> → <code>${r.risk_amount:,.2f}</code>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"📍 Entry: <code>{r.entry}</code>\n"
+        f"🛑 SL: <code>{r.sl}</code>"
+    )
+    if default_sl:
+        msg += " <i>(50 pip default)</i>"
+    msg += (
+        f"\n📏 SL Distance: <code>{r.sl_pips} pips</code>\n"
+        f"💵 Pip Value: <code>${r.pip_value}/pip/lot</code>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"✅ <b>Lot Size: {r.lot_size}</b>\n"
+        f"📦 Units: <code>{r.position_size_units:,.0f}</code>"
+    )
+    if note:
+        msg += f"\n\n{note}"
+    return msg

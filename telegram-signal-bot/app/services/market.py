@@ -67,6 +67,79 @@ class SentimentData:
         }
 
 
+@dataclass
+class RiskResult:
+    pair: str
+    balance: float
+    risk_pct: float
+    risk_amount: float
+    entry: float
+    sl: float
+    sl_pips: float
+    pip_value: float  # per standard lot
+    lot_size: float
+    position_size_units: float
+
+    def to_dict(self) -> dict:
+        return {
+            "pair": self.pair, "balance": self.balance,
+            "risk_pct": self.risk_pct, "risk_amount": self.risk_amount,
+            "entry": self.entry, "sl": self.sl,
+            "sl_pips": self.sl_pips, "pip_value": self.pip_value,
+            "lot_size": self.lot_size,
+            "position_size_units": self.position_size_units,
+        }
+
+
+# pip size per pair type
+_PIP_SIZES: dict[str, float] = {
+    "USDJPY": 0.01, "EURJPY": 0.01, "GBPJPY": 0.01,
+    "AUDJPY": 0.01, "CADJPY": 0.01, "CHFJPY": 0.01,
+    "XAUUSD": 0.1, "XAGUSD": 0.01,
+}
+_DEFAULT_PIP = 0.0001
+
+
+def calc_risk(
+    pair: str, balance: float, risk_pct: float,
+    entry: float, sl: float, price_usd: float | None = None,
+) -> RiskResult:
+    pair = pair.upper().replace("/", "")
+    pip_size = _PIP_SIZES.get(pair, _DEFAULT_PIP)
+    sl_pips = abs(entry - sl) / pip_size
+
+    # pip value per standard lot (100,000 units)
+    quote = pair[-3:]
+    if quote == "USD":
+        pip_value = pip_size * 100_000
+    elif pair.startswith("USD"):
+        # USD is base → pip value = pip_size / price * 100,000
+        pip_value = (pip_size / entry) * 100_000 if entry else 10
+    else:
+        # cross pair — approximate via USD price
+        pip_value = (pip_size / (price_usd or entry)) * 100_000 if entry else 10
+
+    # special: gold = $10 per 0.1 pip move on 1 lot (100 oz)
+    if pair == "XAUUSD":
+        pip_value = 10.0  # $10 per pip (0.1) per lot
+    elif pair == "XAGUSD":
+        pip_value = 50.0  # $50 per pip (0.01) per lot (5000 oz)
+
+    risk_amount = balance * (risk_pct / 100)
+    lot_size = round(risk_amount / (sl_pips * pip_value), 2) if sl_pips > 0 and pip_value > 0 else 0
+    position_units = round(lot_size * 100_000, 0)
+
+    return RiskResult(
+        pair=pair, balance=balance, risk_pct=risk_pct,
+        risk_amount=round(risk_amount, 2),
+        entry=entry, sl=sl,
+        sl_pips=round(sl_pips, 1),
+        pip_value=round(pip_value, 2),
+        lot_size=lot_size,
+        position_size_units=position_units,
+    )
+
+
 class MarketService:
 
     # Yahoo Finance ticker mapping

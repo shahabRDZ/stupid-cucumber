@@ -10,7 +10,7 @@ from app.database import (
     SettingsRepository, SignalRepository, StatsRepository,
     SubscriberRepository,
 )
-from app.services.market import MarketService
+from app.services.market import MarketService, calc_risk
 
 STATIC_DIR = Path(__file__).parent.parent / "static"
 
@@ -38,6 +38,13 @@ class ManualSignalIn(BaseModel):
     tp1: str = ""
     tp2: str = ""
     targets: list[str] = ["channel", "bot"]
+
+class RiskCalcIn(BaseModel):
+    balance: float
+    risk_pct: float
+    pair: str
+    entry: float
+    sl: float
 
 class TextsIn(BaseModel):
     texts: dict
@@ -332,5 +339,13 @@ def create_router(config: Config, repos: dict, market: MarketService, web_server
         messages.delete(message_id)
         logs.add("INFO", "api", f"Message #{message_id} deleted")
         return {"status": "ok"}
+
+    # --- risk calculator ---
+
+    @router.post("/api/calc-risk")
+    async def api_calc_risk(data: RiskCalcIn, request: Request):
+        auth(request)
+        r = calc_risk(data.pair.upper(), data.balance, data.risk_pct, data.entry, data.sl)
+        return r.to_dict()
 
     return router

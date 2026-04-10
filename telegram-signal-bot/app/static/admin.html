@@ -252,6 +252,17 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
         <table><thead><tr><th>#</th><th>Pair</th><th>Dir</th><th>Entry</th><th>TP1</th><th>SL</th><th>Sent</th><th>Time</th></tr></thead>
         <tbody id="dash-signals"></tbody></table>
       </div></div></div>
+      <div class="panel"><div class="panel-header"><h3>📐 Risk Calculator</h3></div><div class="panel-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+          <div class="form-group"><label>Balance ($)</label><input id="rc-balance" value="1000" dir="ltr" type="number"></div>
+          <div class="form-group"><label>Risk (%)</label><input id="rc-risk" value="2" dir="ltr" type="number" step="0.5"></div>
+          <div class="form-group"><label>Pair</label><input id="rc-pair" placeholder="EURUSD" dir="ltr"></div>
+          <div class="form-group"><label>Entry</label><input id="rc-entry" placeholder="1.0850" dir="ltr"></div>
+          <div class="form-group"><label>SL</label><input id="rc-sl" placeholder="1.0800" dir="ltr"></div>
+        </div>
+        <button class="btn btn-primary" onclick="calcRisk()">Calculate</button>
+        <div id="rc-result" style="margin-top:14px;display:none;background:var(--surface2);border-radius:var(--radius-sm);padding:16px;font-family:'Courier New',monospace;direction:ltr"></div>
+      </div></div>
     </div>
 
     <!-- Market -->
@@ -605,6 +616,18 @@ async function deleteMessage(id){
   if(!confirm('Delete message #'+id+'?'))return;
   await api('/api/messages/'+id,{method:'DELETE'});
   loadMessages();
+}
+async function calcRisk(){
+  const balance=parseFloat(document.getElementById('rc-balance').value);
+  const risk_pct=parseFloat(document.getElementById('rc-risk').value);
+  const pair=document.getElementById('rc-pair').value.trim().toUpperCase();
+  const entry=parseFloat(document.getElementById('rc-entry').value);
+  const sl=parseFloat(document.getElementById('rc-sl').value);
+  if(!pair||!balance||!entry||!sl)return alert('Fill all fields');
+  const r=await api('/api/calc-risk',{method:'POST',body:JSON.stringify({balance,risk_pct,pair,entry,sl})});
+  const el=document.getElementById('rc-result');
+  el.style.display='block';
+  el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px"><div>💱 <b>${r.pair}</b></div><div>💰 Balance: $${r.balance.toLocaleString()}</div><div>⚠️ Risk: ${r.risk_pct}% → $${r.risk_amount}</div><div>📏 SL: ${r.sl_pips} pips</div><div>💵 Pip Value: $${r.pip_value}/pip/lot</div><div></div></div><div style="margin-top:12px;font-size:20px;font-weight:800;color:var(--green)">✅ Lot Size: ${r.lot_size}</div><div style="font-size:13px;color:var(--text2);margin-top:4px">📦 Units: ${r.position_size_units.toLocaleString()}</div>`;
 }
 async function saveSetting(k,v){await api('/api/settings',{method:'PUT',body:JSON.stringify({key:k,value:v})})}
 async function saveTemplate(){await saveSetting('message_template',document.getElementById('set-template').value);alert('Saved!')}
