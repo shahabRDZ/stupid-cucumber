@@ -26,6 +26,12 @@ class SettingIn(BaseModel):
 class LoginIn(BaseModel):
     password: str
 
+class ChannelMessageIn(BaseModel):
+    text: str
+
+class TextsIn(BaseModel):
+    texts: dict
+
 
 def _check_auth(request: Request, password: str) -> None:
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
@@ -33,7 +39,7 @@ def _check_auth(request: Request, password: str) -> None:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
-def create_router(config: Config, repos: dict, market: MarketService) -> APIRouter:
+def create_router(config: Config, repos: dict, market: MarketService, web_server=None) -> APIRouter:
     router = APIRouter()
 
     channels: ChannelRepository = repos["channels"]
@@ -227,5 +233,39 @@ def create_router(config: Config, repos: dict, market: MarketService) -> APIRout
     async def public_prices():
         data = await market.get_prices()
         return [d.to_dict() for d in data]
+
+    # --- bot texts ---
+
+    @router.get("/api/texts")
+    async def get_texts(request: Request):
+        auth(request)
+        keys = [
+            "welcome_fa", "welcome_en", "welcome_tr",
+            "subscribed_fa", "subscribed_en", "subscribed_tr",
+            "help_fa", "help_en", "help_tr",
+            "signal_footer", "channel_cta",
+        ]
+        return {k: settings.get(k, "") for k in keys}
+
+    @router.put("/api/texts")
+    async def update_texts(data: TextsIn, request: Request):
+        auth(request)
+        for k, v in data.texts.items():
+            settings.set(k, v)
+        logs.add("INFO", "api", "Bot texts updated")
+        return {"status": "ok"}
+
+    # --- channel management ---
+
+    @router.post("/api/channel/send")
+    async def channel_send(data: ChannelMessageIn, request: Request):
+        auth(request)
+        ch = settings.get("target_channel", "")
+        if not ch:
+            raise HTTPException(400, "No target channel set")
+        if web_server:
+            await web_server.send_to_channel(data.text)
+        logs.add("INFO", "api", f"Channel message sent to {ch}")
+        return {"status": "sent", "channel": ch}
 
     return router

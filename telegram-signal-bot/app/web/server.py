@@ -37,14 +37,22 @@ class WebServer:
         self._config = config
         self._logger = logging.getLogger("WebServer")
         self.ws_manager = WebSocketManager()
+        self._channel_send_callback = None
 
         self.app = FastAPI(title="Signal Bot API", version="2.0")
 
         static_dir = Path(__file__).parent.parent / "static"
         self.app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-        router = create_router(config, repositories, market)
+        router = create_router(config, repositories, market, self)
         self.app.include_router(router)
+
+    def on_channel_send(self, callback):
+        self._channel_send_callback = callback
+
+    async def send_to_channel(self, text: str):
+        if self._channel_send_callback:
+            await self._channel_send_callback(text)
 
         @self.app.websocket("/ws")
         async def _ws_endpoint(ws: WebSocket) -> None:

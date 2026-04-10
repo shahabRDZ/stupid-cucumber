@@ -88,6 +88,9 @@ class Application:
             self.signal_msgs, self.subscribers, self.logs, self.market,
         )
 
+        # wire channel send from admin panel
+        self.web.on_channel_send(self._send_to_channel)
+
         self.logs.add("INFO", "app", f"System ready — port {self._config.web_port}")
         logger.info(f"Dashboard : http://localhost:{self._config.web_port}")
         logger.info(f"Signals   : http://localhost:{self._config.web_port}/signals")
@@ -126,6 +129,14 @@ class Application:
         latest = self.signals.get_many(limit=1)
         if latest:
             await self.web.notify_signal(latest[0].to_dict())
+
+    async def _send_to_channel(self, text: str) -> None:
+        ch = self.settings.get("target_channel", "")
+        if ch:
+            try:
+                await self.bot.client.send_message(ch, text, parse_mode="html")
+            except Exception as exc:
+                logger.error(f"Channel send: {exc}")
 
     async def _handle_message(self, msg_data: dict) -> None:
         await self.web.notify_message(msg_data)

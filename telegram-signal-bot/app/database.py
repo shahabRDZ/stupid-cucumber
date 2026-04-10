@@ -126,6 +126,17 @@ _DEFAULT_SETTINGS = {
     "signal_counter": "0",
     "cta_interval": "5",
     "message_template": "━━━━━━━━━━━━━━━━━━━━\n{signal}\n━━━━━━━━━━━━━━━━━━━━\n📅 {time}\n📡 Signal Bot",
+    "welcome_fa": "به ربات سیگنال خوش آمدید!\nسیگنال‌ها به صورت لحظه‌ای ارسال می‌شوند.",
+    "welcome_en": "Welcome! You'll receive real-time forex signals.\nUse the menu below.",
+    "welcome_tr": "Sinyal botuna hoş geldiniz!\nSinyaller gerçek zamanlı gönderilecektir.",
+    "subscribed_fa": "عضویت شما فعال شد!",
+    "subscribed_en": "You are now subscribed to signals!",
+    "subscribed_tr": "Aboneliğiniz aktif!",
+    "help_fa": "<b>دستورات:</b>\n/start - عضویت\n/stop - لغو\n/price - قیمت لحظه‌ای\n/calendar - تقویم اقتصادی\n/sentiment - احساسات بازار\n/alert - هشدار قیمت\n/myalerts - هشدارهای من",
+    "help_en": "<b>Commands:</b>\n/start - Subscribe\n/stop - Unsubscribe\n/price - Live price\n/calendar - Economic calendar\n/sentiment - Market sentiment\n/alert - Price alert\n/myalerts - Your alerts",
+    "help_tr": "<b>Komutlar:</b>\n/start - Abone ol\n/stop - Çık\n/price - Canlı fiyat\n/calendar - Ekonomik takvim\n/sentiment - Piyasa duyarlılığı\n/alert - Fiyat alarmı\n/myalerts - Alarmlarım",
+    "signal_footer": "💬 @AcademySignalbot | 📺 @AcademySignalsss",
+    "channel_cta": "🤖 <b>Want more features?</b>\n\n💹 Live prices\n📅 Economic calendar\n🔔 Price alerts\n🧭 Market sentiment\n\n👉 @AcademySignalbot",
 }
 
 

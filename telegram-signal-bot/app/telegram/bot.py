@@ -13,80 +13,40 @@ from app.telegram.base import BaseTelegramClient
 
 # --- i18n ---
 
-_TEXTS = {
-    "en": {
-        "welcome": "Welcome! You'll receive real-time forex signals.\nUse the menu below.",
-        "subscribed": "You are now subscribed to signals!",
-        "unsubscribed": "Unsubscribed. Send /start to re-subscribe.",
-        "help": (
-            "<b>Commands:</b>\n"
-            "/start - Subscribe\n/stop - Unsubscribe\n"
-            "/status - Bot status\n/lang - Change language\n"
-            "/price EURUSD - Live price\n/calendar - Economic calendar\n"
-            "/sentiment EURUSD - Market sentiment\n"
-            "/alert EURUSD 1.0900 above - Set price alert\n"
-            "/myalerts - Your alerts\n/menu - Show menu"
-        ),
-        "choose_lang": "Choose your language:",
-        "hello": "Hello",
-    },
-    "fa": {
-        "welcome": "به ربات سیگنال خوش آمدید!\nسیگنال‌ها به صورت لحظه‌ای ارسال می‌شوند.",
-        "subscribed": "عضویت شما فعال شد!",
-        "unsubscribed": "عضویت لغو شد. برای مجدد /start بزنید.",
-        "help": (
-            "<b>دستورات:</b>\n"
-            "/start - عضویت\n/stop - لغو\n"
-            "/status - وضعیت\n/lang - زبان\n"
-            "/price EURUSD - قیمت لحظه‌ای\n/calendar - تقویم اقتصادی\n"
-            "/sentiment EURUSD - احساسات بازار\n"
-            "/alert EURUSD 1.0900 above - هشدار قیمت\n"
-            "/myalerts - هشدارهای من\n/menu - منو"
-        ),
-        "choose_lang": "زبان خود را انتخاب کنید:",
-        "hello": "سلام",
-    },
-    "tr": {
-        "welcome": "Sinyal botuna hoş geldiniz!\nSinyaller gerçek zamanlı gönderilecektir.",
-        "subscribed": "Aboneliğiniz aktif!",
-        "unsubscribed": "Abonelikten çıktınız. /start ile tekrar abone olun.",
-        "help": (
-            "<b>Komutlar:</b>\n"
-            "/start - Abone ol\n/stop - Çık\n"
-            "/status - Durum\n/lang - Dil\n"
-            "/price EURUSD - Canlı fiyat\n/calendar - Ekonomik takvim\n"
-            "/sentiment EURUSD - Piyasa duyarlılığı\n"
-            "/alert EURUSD 1.0900 above - Fiyat alarmı\n"
-            "/myalerts - Alarmlarım\n/menu - Menü"
-        ),
-        "choose_lang": "Dilinizi seçin:",
-        "hello": "Merhaba",
-    },
+# fallback texts (used if not set in DB)
+_FALLBACK = {
+    "en": {"hello": "Hello", "choose_lang": "Choose your language:", "unsubscribed": "Unsubscribed. Send /start to re-subscribe."},
+    "fa": {"hello": "سلام", "choose_lang": "زبان خود را انتخاب کنید:", "unsubscribed": "عضویت لغو شد. برای مجدد /start بزنید."},
+    "tr": {"hello": "Merhaba", "choose_lang": "Dilinizi seçin:", "unsubscribed": "Abonelikten çıktınız. /start ile tekrar abone olun."},
 }
+
+# settings_repo gets set in __init__
+_settings_ref = None
+
+def _set_settings_ref(s):
+    global _settings_ref
+    _settings_ref = s
 
 _LANGS = {"en": "English", "fa": "فارسی", "tr": "Türkçe"}
 
 _KEYBOARDS = {
     "en": [
-        [Button.text("📡 Get Signals", resize=True), Button.text("📊 Status", resize=True)],
-        [Button.text("💹 Prices", resize=True), Button.text("📅 Calendar", resize=True)],
-        [Button.text("🧭 Sentiment", resize=True), Button.text("🔔 My Alerts", resize=True)],
-        [Button.text("📖 Help", resize=True), Button.text("🌐 Language", resize=True)],
-        [Button.text("❌ Unsubscribe", resize=True)],
+        [Button.text("📡 Get Signals", resize=True), Button.text("💹 Prices", resize=True)],
+        [Button.text("📅 Calendar", resize=True), Button.text("🧭 Sentiment", resize=True)],
+        [Button.text("🔔 My Alerts", resize=True), Button.text("📖 Help", resize=True)],
+        [Button.text("🌐 Language", resize=True)],
     ],
     "fa": [
-        [Button.text("📡 دریافت سیگنال", resize=True), Button.text("📊 وضعیت", resize=True)],
-        [Button.text("💹 قیمت لحظه‌ای", resize=True), Button.text("📅 تقویم اقتصادی", resize=True)],
-        [Button.text("🧭 احساسات بازار", resize=True), Button.text("🔔 هشدارهای من", resize=True)],
-        [Button.text("📖 راهنما", resize=True), Button.text("🌐 زبان", resize=True)],
-        [Button.text("❌ لغو عضویت", resize=True)],
+        [Button.text("📡 دریافت سیگنال", resize=True), Button.text("💹 قیمت لحظه‌ای", resize=True)],
+        [Button.text("📅 تقویم اقتصادی", resize=True), Button.text("🧭 احساسات بازار", resize=True)],
+        [Button.text("🔔 هشدارهای من", resize=True), Button.text("📖 راهنما", resize=True)],
+        [Button.text("🌐 زبان", resize=True)],
     ],
     "tr": [
-        [Button.text("📡 Sinyal Al", resize=True), Button.text("📊 Durum", resize=True)],
-        [Button.text("💹 Fiyatlar", resize=True), Button.text("📅 Takvim", resize=True)],
-        [Button.text("🧭 Duyarlılık", resize=True), Button.text("🔔 Alarmlarım", resize=True)],
-        [Button.text("📖 Yardım", resize=True), Button.text("🌐 Dil", resize=True)],
-        [Button.text("❌ Abonelikten Çık", resize=True)],
+        [Button.text("📡 Sinyal Al", resize=True), Button.text("💹 Fiyatlar", resize=True)],
+        [Button.text("📅 Takvim", resize=True), Button.text("🧭 Duyarlılık", resize=True)],
+        [Button.text("🔔 Alarmlarım", resize=True), Button.text("📖 Yardım", resize=True)],
+        [Button.text("🌐 Dil", resize=True)],
     ],
 }
 
@@ -106,7 +66,13 @@ _ALL_BTNS = (
 
 
 def _t(lang: str, key: str) -> str:
-    return _TEXTS.get(lang, _TEXTS["en"]).get(key, _TEXTS["en"].get(key, ""))
+    # try from DB first
+    if _settings_ref:
+        db_key = f"{key}_{lang}"
+        val = _settings_ref.get(db_key)
+        if val:
+            return val
+    return _FALLBACK.get(lang, _FALLBACK["en"]).get(key, _FALLBACK["en"].get(key, ""))
 
 
 def _kb(lang: str):
@@ -135,6 +101,7 @@ class SignalBot(BaseTelegramClient):
         self._market = market
         self._user_client = user_client
         self._alert_service = AlertService(alerts_repo, market)
+        _set_settings_ref(settings)
 
     @property
     def alert_service(self) -> AlertService:

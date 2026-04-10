@@ -194,6 +194,8 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
 <div class="more-menu" id="moreMenu">
   <a onclick="navTo('channels')">📺 Channels</a>
   <a onclick="navTo('subscribers')">👥 Subscribers</a>
+  <a onclick="navTo('texts')">✏️ Texts</a>
+  <a onclick="navTo('chmanage')">📢 Channel Mgr</a>
   <a onclick="navTo('settings')">⚙️ Settings</a>
   <a onclick="navTo('logs')">📋 Logs</a>
   <a onclick="logout()" style="color:var(--red)">🚪 Logout</a>
@@ -222,6 +224,8 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
       <a data-page="messages"><span class="icon">💬</span>Messages</a>
       <a data-page="channels"><span class="icon">📺</span>Channels</a>
       <a data-page="subscribers"><span class="icon">👥</span>Subscribers</a>
+      <a data-page="texts"><span class="icon">✏️</span>Texts</a>
+      <a data-page="chmanage"><span class="icon">📢</span>Channel Mgr</a>
       <a data-page="settings"><span class="icon">⚙️</span>Settings</a>
       <a data-page="logs"><span class="icon">📋</span>Logs</a>
       <a onclick="logout()" style="margin-top:auto;color:var(--red)"><span class="icon">🚪</span>Logout</a>
@@ -340,6 +344,53 @@ textarea{min-height:100px;font-family:'Courier New',monospace;direction:ltr}
       </div></div>
     </div>
 
+    <!-- Texts -->
+    <div class="page" id="page-texts">
+      <h2>Bot Texts</h2>
+      <div class="panel"><div class="panel-header"><h3>Welcome Messages</h3></div><div class="panel-body">
+        <div class="form-group"><label>Welcome — فارسی</label><textarea id="txt-welcome_fa" dir="rtl"></textarea></div>
+        <div class="form-group"><label>Welcome — English</label><textarea id="txt-welcome_en" dir="ltr"></textarea></div>
+        <div class="form-group"><label>Welcome — Türkçe</label><textarea id="txt-welcome_tr" dir="ltr"></textarea></div>
+      </div></div>
+      <div class="panel"><div class="panel-header"><h3>Subscribed Messages</h3></div><div class="panel-body">
+        <div class="form-group"><label>Subscribed — فارسی</label><input id="txt-subscribed_fa" dir="rtl"></div>
+        <div class="form-group"><label>Subscribed — English</label><input id="txt-subscribed_en" dir="ltr"></div>
+        <div class="form-group"><label>Subscribed — Türkçe</label><input id="txt-subscribed_tr" dir="ltr"></div>
+      </div></div>
+      <div class="panel"><div class="panel-header"><h3>Help Messages</h3></div><div class="panel-body">
+        <div class="form-group"><label>Help — فارسی</label><textarea id="txt-help_fa" dir="rtl"></textarea></div>
+        <div class="form-group"><label>Help — English</label><textarea id="txt-help_en" dir="ltr"></textarea></div>
+        <div class="form-group"><label>Help — Türkçe</label><textarea id="txt-help_tr" dir="ltr"></textarea></div>
+      </div></div>
+      <div class="panel"><div class="panel-header"><h3>Signal & Channel</h3></div><div class="panel-body">
+        <div class="form-group"><label>Signal Footer</label><input id="txt-signal_footer" dir="ltr"></div>
+        <div class="form-group"><label>Channel CTA (promo message)</label><textarea id="txt-channel_cta" dir="ltr"></textarea></div>
+      </div></div>
+      <button class="btn btn-primary" onclick="saveTexts()" style="margin-top:10px">Save All Texts</button>
+    </div>
+
+    <!-- Channel Manager -->
+    <div class="page" id="page-chmanage">
+      <h2>Channel Manager</h2>
+      <div class="panel"><div class="panel-header"><h3>Send Message to Channel</h3></div><div class="panel-body">
+        <div class="form-group"><label>Message (HTML supported)</label><textarea id="ch-msg-text" dir="ltr" placeholder="Write a message to send to the channel..."></textarea></div>
+        <button class="btn btn-primary" onclick="sendToChannel()">Send to Channel</button>
+        <div id="ch-msg-result" style="margin-top:10px;color:var(--green);display:none"></div>
+      </div></div>
+      <div class="panel"><div class="panel-header"><h3>Send Manual Signal</h3></div><div class="panel-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>Pair</label><input id="ch-sig-pair" placeholder="EURUSD" dir="ltr"></div>
+          <div class="form-group"><label>Direction</label><select id="ch-sig-dir"><option>BUY</option><option>SELL</option></select></div>
+          <div class="form-group"><label>Entry</label><input id="ch-sig-entry" placeholder="1.0850" dir="ltr"></div>
+          <div class="form-group"><label>SL</label><input id="ch-sig-sl" placeholder="1.0800" dir="ltr"></div>
+          <div class="form-group"><label>TP1</label><input id="ch-sig-tp1" placeholder="1.0900" dir="ltr"></div>
+          <div class="form-group"><label>TP2</label><input id="ch-sig-tp2" placeholder="1.0950" dir="ltr"></div>
+        </div>
+        <button class="btn btn-primary" onclick="sendManualSignal()" style="margin-top:10px">Send Signal</button>
+        <div id="ch-sig-result" style="margin-top:10px;color:var(--green);display:none"></div>
+      </div></div>
+    </div>
+
     <!-- Logs -->
     <div class="page" id="page-logs">
       <h2>Logs</h2>
@@ -372,7 +423,7 @@ function headers(){return{'Authorization':'Bearer '+TOKEN,'Content-Type':'applic
 async function api(p,o={}){const r=await fetch(p,{headers:headers(),...o});if(r.status===401){localStorage.removeItem('token');location.reload()}return r.json()}
 
 // Navigation
-const loaders={dashboard:loadDashboard,market:loadMarket,signals:loadSignals,messages:loadMessages,channels:loadChannels,subscribers:loadSubscribers,settings:loadSettings,logs:loadLogs};
+const loaders={dashboard:loadDashboard,market:loadMarket,signals:loadSignals,messages:loadMessages,channels:loadChannels,subscribers:loadSubscribers,texts:loadTexts,chmanage:loadChManage,settings:loadSettings,logs:loadLogs};
 
 function navTo(page){
   // Update sidebar
@@ -469,6 +520,49 @@ async function loadSettings(){
   document.getElementById('set-template').value=s.message_template||'';
 }
 function logout(){localStorage.removeItem('token');location.reload()}
+
+// Texts
+async function loadTexts(){
+  const t=await api('/api/texts');
+  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta'];
+  keys.forEach(k=>{const el=document.getElementById('txt-'+k);if(el)el.value=t[k]||''});
+}
+async function saveTexts(){
+  const keys=['welcome_fa','welcome_en','welcome_tr','subscribed_fa','subscribed_en','subscribed_tr','help_fa','help_en','help_tr','signal_footer','channel_cta'];
+  const texts={};keys.forEach(k=>{const el=document.getElementById('txt-'+k);if(el)texts[k]=el.value});
+  await api('/api/texts',{method:'PUT',body:JSON.stringify({texts})});
+  alert('Texts saved!');
+}
+
+// Channel Manager
+function loadChManage(){}
+async function sendToChannel(){
+  const text=document.getElementById('ch-msg-text').value.trim();
+  if(!text)return;
+  await api('/api/channel/send',{method:'POST',body:JSON.stringify({text})});
+  const r=document.getElementById('ch-msg-result');r.textContent='Sent!';r.style.display='block';
+  document.getElementById('ch-msg-text').value='';
+  setTimeout(()=>r.style.display='none',3000);
+}
+async function sendManualSignal(){
+  const pair=document.getElementById('ch-sig-pair').value.trim().toUpperCase();
+  const dir=document.getElementById('ch-sig-dir').value;
+  const entry=document.getElementById('ch-sig-entry').value.trim();
+  const sl=document.getElementById('ch-sig-sl').value.trim();
+  const tp1=document.getElementById('ch-sig-tp1').value.trim();
+  const tp2=document.getElementById('ch-sig-tp2').value.trim();
+  if(!pair||!entry)return alert('Pair and Entry required');
+  const emoji=dir==='BUY'?'🟢':'🔴';
+  let msg='━━━━━━━━━━━━━━━━━━━━\n'+emoji+' <b>'+pair+' — '+dir+'</b>\n📍 Entry: <code>'+entry+'</code>\n';
+  if(tp1)msg+='🎯 TP1: <code>'+tp1+'</code>\n';
+  if(tp2)msg+='🎯 TP2: <code>'+tp2+'</code>\n';
+  if(sl)msg+='🛑 SL: <code>'+sl+'</code>\n';
+  msg+='━━━━━━━━━━━━━━━━━━━━';
+  await api('/api/channel/send',{method:'POST',body:JSON.stringify({text:msg})});
+  const r=document.getElementById('ch-sig-result');r.textContent='Signal sent!';r.style.display='block';
+  ['ch-sig-pair','ch-sig-entry','ch-sig-sl','ch-sig-tp1','ch-sig-tp2'].forEach(id=>document.getElementById(id).value='');
+  setTimeout(()=>r.style.display='none',3000);
+}
 async function saveSetting(k,v){await api('/api/settings',{method:'PUT',body:JSON.stringify({key:k,value:v})})}
 async function saveTemplate(){await saveSetting('message_template',document.getElementById('set-template').value);alert('Saved!')}
 async function saveChannel(){await saveSetting('target_channel',document.getElementById('set-channel').value.trim());alert('Channel saved!')}
