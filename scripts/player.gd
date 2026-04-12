@@ -847,12 +847,10 @@ func _draw_stem_and_leaf(flip: float) -> void:
 	var leaf1_ctrl2: Vector2 = stem_top + Vector2(cos(leaf_rot) * 8 * flip, sin(leaf_rot) * -5 - 3)
 
 	var leaf1_pts: PackedVector2Array = PackedVector2Array()
-	leaf1_pts.append(stem_top)
-	leaf1_pts.append(leaf1_ctrl1 + Vector2(0, 3))
+	leaf1_pts.append(stem_top + Vector2(-2 * flip, 2))
 	leaf1_pts.append(leaf1_tip)
-	leaf1_pts.append(leaf1_ctrl2 + Vector2(0, -3))
-	if leaf1_pts.size() >= 3:
-		draw_colored_polygon(leaf1_pts, l_color)
+	leaf1_pts.append(stem_top + Vector2(2 * flip, -2))
+	draw_colored_polygon(leaf1_pts, l_color)
 	# Leaf vein (main)
 	draw_line(stem_top, leaf1_tip, s_dark, 1.0)
 	# Side veins
@@ -870,12 +868,10 @@ func _draw_stem_and_leaf(flip: float) -> void:
 	var leaf2_ctrl: Vector2 = leaf2_base + Vector2(cos(leaf2_rot) * -5 * flip, sin(leaf2_rot) * -2 - 5)
 
 	var leaf2_pts: PackedVector2Array = PackedVector2Array()
-	leaf2_pts.append(leaf2_base)
-	leaf2_pts.append(leaf2_ctrl + Vector2(0, 2.5))
+	leaf2_pts.append(leaf2_base + Vector2(2 * flip, 2))
 	leaf2_pts.append(leaf2_tip)
-	leaf2_pts.append(leaf2_ctrl + Vector2(0, -2.5))
-	if leaf2_pts.size() >= 3:
-		draw_colored_polygon(leaf2_pts, l_color.darkened(0.05))
+	leaf2_pts.append(leaf2_base + Vector2(-2 * flip, -2))
+	draw_colored_polygon(leaf2_pts, l_color.darkened(0.05))
 	# Leaf 2 vein
 	draw_line(leaf2_base, leaf2_tip, s_dark, 0.7)
 
