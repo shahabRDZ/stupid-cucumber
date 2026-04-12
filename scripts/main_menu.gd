@@ -1,10 +1,12 @@
 extends Control
 
-## Main Menu - Phase 3 with animated background, detailed cucumber, and shop button
+## Main Menu - Phase 4 with difficulty selection, daily challenge, and settings
 
 var title_bounce: float = 0.0
 var floating_veggies: Array[Node2D] = []
 var glow_timer: float = 0.0
+var selected_difficulty_btn: Button = null
+var settings_panel: Panel = null
 
 
 func _ready() -> void:
@@ -128,6 +130,84 @@ func _ready() -> void:
 	shop_btn.pressed.connect(_on_shop_pressed)
 	vbox.add_child(shop_btn)
 
+	# Difficulty selection row
+	var diff_row := HBoxContainer.new()
+	diff_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	diff_row.add_theme_constant_override("separation", 8)
+	vbox.add_child(diff_row)
+
+	var easy_btn := _create_difficulty_btn("EASY", Color(0.3, 0.7, 0.3), GameManager.Difficulty.EASY)
+	diff_row.add_child(easy_btn)
+
+	var normal_btn := _create_difficulty_btn("NORMAL", Color(0.9, 0.6, 0.2), GameManager.Difficulty.NORMAL)
+	diff_row.add_child(normal_btn)
+
+	var hard_btn := _create_difficulty_btn("HARD", Color(0.85, 0.2, 0.15), GameManager.Difficulty.HARD)
+	diff_row.add_child(hard_btn)
+
+	# Select NORMAL by default
+	selected_difficulty_btn = normal_btn
+	_select_difficulty_btn(normal_btn, Color(0.9, 0.6, 0.2), GameManager.Difficulty.NORMAL)
+
+	# Daily Challenge button (purple)
+	var daily_btn := Button.new()
+	daily_btn.text = "  DAILY CHALLENGE  "
+	daily_btn.add_theme_font_size_override("font_size", 20)
+	daily_btn.add_theme_color_override("font_color", Color.WHITE)
+	daily_btn.custom_minimum_size = Vector2(220, 46)
+
+	var daily_style := StyleBoxFlat.new()
+	daily_style.bg_color = Color(0.5, 0.2, 0.7)
+	daily_style.corner_radius_top_left = 12
+	daily_style.corner_radius_top_right = 12
+	daily_style.corner_radius_bottom_left = 12
+	daily_style.corner_radius_bottom_right = 12
+	daily_style.border_width_bottom = 4
+	daily_style.border_color = Color(0.35, 0.12, 0.5)
+	daily_style.content_margin_left = 10.0
+	daily_style.content_margin_right = 10.0
+	daily_btn.add_theme_stylebox_override("normal", daily_style)
+
+	var daily_hover: StyleBoxFlat = daily_style.duplicate()
+	daily_hover.bg_color = Color(0.6, 0.3, 0.8)
+	daily_hover.border_color = Color(0.45, 0.18, 0.6)
+	daily_btn.add_theme_stylebox_override("hover", daily_hover)
+
+	var daily_pressed: StyleBoxFlat = daily_style.duplicate()
+	daily_pressed.bg_color = Color(0.4, 0.15, 0.55)
+	daily_pressed.border_width_bottom = 1
+	daily_btn.add_theme_stylebox_override("pressed", daily_pressed)
+
+	daily_btn.pressed.connect(_on_daily_pressed)
+	vbox.add_child(daily_btn)
+
+	# Settings gear button (top-right corner)
+	var gear_btn := Button.new()
+	gear_btn.text = "⚙"
+	gear_btn.add_theme_font_size_override("font_size", 28)
+	gear_btn.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+	gear_btn.custom_minimum_size = Vector2(48, 48)
+	gear_btn.set_anchors_preset(PRESET_TOP_RIGHT)
+	gear_btn.position = Vector2(-58, 10)
+
+	var gear_style := StyleBoxFlat.new()
+	gear_style.bg_color = Color(0.15, 0.15, 0.15, 0.5)
+	gear_style.corner_radius_top_left = 10
+	gear_style.corner_radius_top_right = 10
+	gear_style.corner_radius_bottom_left = 10
+	gear_style.corner_radius_bottom_right = 10
+	gear_btn.add_theme_stylebox_override("normal", gear_style)
+
+	var gear_hover: StyleBoxFlat = gear_style.duplicate()
+	gear_hover.bg_color = Color(0.25, 0.25, 0.25, 0.6)
+	gear_btn.add_theme_stylebox_override("hover", gear_hover)
+
+	gear_btn.pressed.connect(_on_gear_pressed)
+	add_child(gear_btn)
+
+	# Settings panel (hidden by default)
+	_build_settings_panel(viewport_size)
+
 	# Stats display
 	var stats_container := VBoxContainer.new()
 	stats_container.add_theme_constant_override("separation", 4)
@@ -172,7 +252,7 @@ func _ready() -> void:
 
 	# Version label bottom-right
 	var version := Label.new()
-	version.text = "v0.3 - Phase 3"
+	version.text = "v0.4 - Phase 4"
 	version.add_theme_font_size_override("font_size", 12)
 	version.add_theme_color_override("font_color", Color(1, 1, 1, 0.3))
 	version.set_anchors_preset(PRESET_BOTTOM_RIGHT)
@@ -201,6 +281,170 @@ func _on_play_pressed() -> void:
 
 func _on_shop_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/shop.tscn")
+
+
+func _on_daily_pressed() -> void:
+	GameManager.restart_game()
+	GameManager.start_daily_challenge()
+	get_tree().change_scene_to_file("res://scenes/main_game.tscn")
+
+
+func _on_gear_pressed() -> void:
+	if settings_panel:
+		settings_panel.visible = not settings_panel.visible
+
+
+func _create_difficulty_btn(label: String, color: Color, difficulty: int) -> Button:
+	var btn := Button.new()
+	btn.text = label
+	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.custom_minimum_size = Vector2(90, 36)
+
+	var s := StyleBoxFlat.new()
+	s.bg_color = color
+	s.corner_radius_top_left = 8
+	s.corner_radius_top_right = 8
+	s.corner_radius_bottom_left = 8
+	s.corner_radius_bottom_right = 8
+	s.border_width_bottom = 3
+	s.border_color = color.darkened(0.3)
+	btn.add_theme_stylebox_override("normal", s)
+
+	var h: StyleBoxFlat = s.duplicate()
+	h.bg_color = color.lightened(0.15)
+	btn.add_theme_stylebox_override("hover", h)
+
+	var p: StyleBoxFlat = s.duplicate()
+	p.bg_color = color.darkened(0.15)
+	p.border_width_bottom = 1
+	btn.add_theme_stylebox_override("pressed", p)
+
+	btn.pressed.connect(_select_difficulty_btn.bind(btn, color, difficulty))
+	return btn
+
+
+func _select_difficulty_btn(btn: Button, color: Color, difficulty: int) -> void:
+	GameManager.set_difficulty(difficulty)
+
+	# Reset previous selection
+	if selected_difficulty_btn and selected_difficulty_btn != btn:
+		var old_style: StyleBoxFlat = selected_difficulty_btn.get_theme_stylebox("normal") as StyleBoxFlat
+		if old_style:
+			old_style.border_width_left = 0
+			old_style.border_width_right = 0
+			old_style.border_width_top = 0
+
+	# Highlight selected button
+	selected_difficulty_btn = btn
+	var sel_style: StyleBoxFlat = btn.get_theme_stylebox("normal") as StyleBoxFlat
+	if sel_style:
+		sel_style.bg_color = color.lightened(0.2)
+		sel_style.border_width_left = 2
+		sel_style.border_width_right = 2
+		sel_style.border_width_top = 2
+		sel_style.border_color = Color.WHITE
+
+
+func _build_settings_panel(viewport_size: Vector2) -> void:
+	settings_panel = Panel.new()
+	settings_panel.set_anchors_preset(PRESET_CENTER)
+	settings_panel.position = Vector2(-140, -100)
+	settings_panel.size = Vector2(280, 200)
+	settings_panel.visible = false
+
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.1, 0.1, 0.15, 0.92)
+	panel_style.corner_radius_top_left = 14
+	panel_style.corner_radius_top_right = 14
+	panel_style.corner_radius_bottom_left = 14
+	panel_style.corner_radius_bottom_right = 14
+	panel_style.border_width_left = 2
+	panel_style.border_width_right = 2
+	panel_style.border_width_top = 2
+	panel_style.border_width_bottom = 2
+	panel_style.border_color = Color(0.4, 0.4, 0.5)
+	settings_panel.add_theme_stylebox_override("panel", panel_style)
+	add_child(settings_panel)
+
+	var settings_vbox := VBoxContainer.new()
+	settings_vbox.set_anchors_preset(PRESET_FULL_RECT)
+	settings_vbox.add_theme_constant_override("separation", 12)
+	settings_vbox.offset_left = 20
+	settings_vbox.offset_right = -20
+	settings_vbox.offset_top = 15
+	settings_vbox.offset_bottom = -15
+	settings_panel.add_child(settings_vbox)
+
+	# Title
+	var settings_title := Label.new()
+	settings_title.text = "SETTINGS"
+	settings_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	settings_title.add_theme_font_size_override("font_size", 22)
+	settings_title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95))
+	settings_vbox.add_child(settings_title)
+
+	# Music row
+	var music_row := HBoxContainer.new()
+	music_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	music_row.add_theme_constant_override("separation", 12)
+	settings_vbox.add_child(music_row)
+
+	var music_label := Label.new()
+	music_label.text = "Music"
+	music_label.add_theme_font_size_override("font_size", 18)
+	music_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+	music_label.custom_minimum_size = Vector2(80, 0)
+	music_row.add_child(music_label)
+
+	var music_toggle := Button.new()
+	music_toggle.text = "ON" if GameManager.music_enabled else "OFF"
+	music_toggle.toggle_mode = true
+	music_toggle.button_pressed = GameManager.music_enabled
+	music_toggle.add_theme_font_size_override("font_size", 16)
+	music_toggle.custom_minimum_size = Vector2(60, 32)
+	music_toggle.toggled.connect(_on_music_toggled.bind(music_toggle))
+	music_row.add_child(music_toggle)
+
+	# SFX row
+	var sfx_row := HBoxContainer.new()
+	sfx_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	sfx_row.add_theme_constant_override("separation", 12)
+	settings_vbox.add_child(sfx_row)
+
+	var sfx_label := Label.new()
+	sfx_label.text = "SFX"
+	sfx_label.add_theme_font_size_override("font_size", 18)
+	sfx_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+	sfx_label.custom_minimum_size = Vector2(80, 0)
+	sfx_row.add_child(sfx_label)
+
+	var sfx_toggle := Button.new()
+	sfx_toggle.text = "ON" if GameManager.sfx_enabled else "OFF"
+	sfx_toggle.toggle_mode = true
+	sfx_toggle.button_pressed = GameManager.sfx_enabled
+	sfx_toggle.add_theme_font_size_override("font_size", 16)
+	sfx_toggle.custom_minimum_size = Vector2(60, 32)
+	sfx_toggle.toggled.connect(_on_sfx_toggled.bind(sfx_toggle))
+	sfx_row.add_child(sfx_toggle)
+
+	# Close button
+	var close_btn := Button.new()
+	close_btn.text = "Close"
+	close_btn.add_theme_font_size_override("font_size", 16)
+	close_btn.custom_minimum_size = Vector2(100, 36)
+	close_btn.pressed.connect(_on_gear_pressed)
+	settings_vbox.add_child(close_btn)
+
+
+func _on_music_toggled(toggled_on: bool, btn: Button) -> void:
+	GameManager.music_enabled = toggled_on
+	btn.text = "ON" if toggled_on else "OFF"
+
+
+func _on_sfx_toggled(toggled_on: bool, btn: Button) -> void:
+	GameManager.sfx_enabled = toggled_on
+	btn.text = "ON" if toggled_on else "OFF"
 
 
 # --- Inner class: Ultra Detailed Cucumber Preview ---

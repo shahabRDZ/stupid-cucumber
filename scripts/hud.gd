@@ -1,8 +1,8 @@
 extends CanvasLayer
 
-## In-game HUD for Stupid Cucumber - Phase 3
+## In-game HUD for Stupid Cucumber - Phase 4
 ## Displays score, salt, power-up bars, combos, distance, achievements,
-## boss HP bar, and touch controls.
+## boss HP bar, difficulty label, and touch controls.
 
 var player: CharacterBody2D = null
 
@@ -16,7 +16,12 @@ var distance_label: Label
 var chili_power_bar: PowerBar
 var shield_power_bar: PowerBar
 var oil_power_bar: PowerBar
+var magnet_power_bar: PowerBar
+var double_score_bar: PowerBar
 var power_bar_container: VBoxContainer
+
+# Difficulty display
+var diff_label: Label
 
 # Achievement system
 var achievement_popup: AchievementPopup
@@ -42,6 +47,7 @@ func _ready() -> void:
 	_build_power_bars()
 	_build_combo_label()
 	_build_distance_display()
+	_build_difficulty_label()
 	_build_achievement_popup()
 	_build_boss_bar()
 	_build_touch_controls()
@@ -73,6 +79,8 @@ func _process(delta: float) -> void:
 	_update_power_bar(chili_power_bar, GameManager.is_chili_active, GameManager.chili_timer, GameManager.chili_duration)
 	_update_power_bar(shield_power_bar, GameManager.is_shield_active, GameManager.shield_timer, GameManager.shield_duration)
 	_update_power_bar(oil_power_bar, GameManager.is_oil_active, GameManager.oil_timer, GameManager.oil_duration)
+	_update_power_bar(magnet_power_bar, GameManager.is_magnet_active, GameManager.magnet_timer, GameManager.magnet_duration)
+	_update_power_bar(double_score_bar, GameManager.is_double_score, GameManager.double_score_timer, GameManager.double_score_duration)
 
 	# --- Distance ---
 	distance_label.text = "%dm" % int(GameManager.distance_traveled)
@@ -250,6 +258,28 @@ func _build_power_bars() -> void:
 	oil_power_bar.visible = false
 	power_bar_container.add_child(oil_power_bar)
 
+	# Magnet bar: purple
+	magnet_power_bar = PowerBar.new()
+	magnet_power_bar.bar_label = "MAGNET"
+	magnet_power_bar.fill_color_start = Color(0.6, 0.2, 0.8)
+	magnet_power_bar.fill_color_end = Color(0.8, 0.4, 1.0)
+	magnet_power_bar.border_color = Color(0.5, 0.15, 0.7)
+	magnet_power_bar.icon_type = PowerBar.IconType.FLAME
+	magnet_power_bar.custom_minimum_size = Vector2(220, 22)
+	magnet_power_bar.visible = false
+	power_bar_container.add_child(magnet_power_bar)
+
+	# Double score bar: golden
+	double_score_bar = PowerBar.new()
+	double_score_bar.bar_label = "2X SCORE"
+	double_score_bar.fill_color_start = Color(1.0, 0.8, 0.1)
+	double_score_bar.fill_color_end = Color(1.0, 0.95, 0.5)
+	double_score_bar.border_color = Color(0.8, 0.6, 0.1)
+	double_score_bar.icon_type = PowerBar.IconType.FLAME
+	double_score_bar.custom_minimum_size = Vector2(220, 22)
+	double_score_bar.visible = false
+	power_bar_container.add_child(double_score_bar)
+
 
 func _build_combo_label() -> void:
 	combo_label = Label.new()
@@ -294,6 +324,31 @@ func _build_distance_display() -> void:
 	distance_label.position = Vector2(-55, -44)
 	distance_label.size = Vector2(110, 30)
 	add_child(distance_label)
+
+
+func _build_difficulty_label() -> void:
+	var bg := Panel.new()
+	bg.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	bg.position = Vector2(-50, 98)
+	bg.size = Vector2(100, 24)
+	var bg_style := StyleBoxFlat.new()
+	bg_style.bg_color = Color(0.0, 0.0, 0.0, 0.3)
+	bg_style.corner_radius_top_left = 5
+	bg_style.corner_radius_top_right = 5
+	bg_style.corner_radius_bottom_left = 5
+	bg_style.corner_radius_bottom_right = 5
+	bg.add_theme_stylebox_override("panel", bg_style)
+	add_child(bg)
+
+	diff_label = Label.new()
+	diff_label.text = GameManager.difficulty_settings[GameManager.current_difficulty]["label"]
+	diff_label.add_theme_font_size_override("font_size", 13)
+	diff_label.add_theme_color_override("font_color", Color(0.9, 0.85, 0.6, 0.8))
+	diff_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	diff_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	diff_label.position = Vector2(-50, 100)
+	diff_label.size = Vector2(100, 20)
+	add_child(diff_label)
 
 
 func _build_achievement_popup() -> void:
