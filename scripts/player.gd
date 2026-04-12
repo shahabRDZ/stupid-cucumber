@@ -299,6 +299,13 @@ func _physics_process(delta: float) -> void:
 		idle_wave_active = false
 		idle_wave_timer = randf_range(3.0, 6.0)
 
+	# Magnet attraction - pull nearby salt toward player
+	if GameManager.is_magnet_active:
+		for node in get_tree().get_nodes_in_group("salt_collectible"):
+			var dist: float = global_position.distance_to(node.global_position)
+			if dist < 150.0 and dist > 5.0:
+				node.global_position = node.global_position.lerp(global_position, delta * 5.0)
+
 	# Dust particles
 	var moving_fast_on_ground: bool = is_on_floor() and abs(velocity.x) > 150
 	dust_particles.emitting = moving_fast_on_ground
@@ -456,6 +463,24 @@ func collect_yogurt() -> void:
 func collect_oil() -> void:
 	GameManager.activate_oil()
 	squash_stretch = Vector2(1.1, 0.9)
+
+
+func collect_magnet() -> void:
+	GameManager.activate_magnet()
+	squash_stretch = Vector2(0.9, 1.1)
+	blush_timer = 0.4
+
+
+func collect_double_score() -> void:
+	GameManager.activate_double_score()
+	squash_stretch = Vector2(0.85, 1.15)
+	blush_timer = 0.5
+
+
+func collect_extra_life() -> void:
+	GameManager.add_extra_life()
+	squash_stretch = Vector2(0.8, 1.2)
+	blush_timer = 0.8
 
 
 func take_hit() -> void:

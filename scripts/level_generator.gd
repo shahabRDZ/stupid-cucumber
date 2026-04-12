@@ -66,9 +66,43 @@ func _process(_delta: float) -> void:
 		last_generated_x += CHUNK_WIDTH
 		chunk_count += 1
 
+	_update_weather(_delta)
+
 	for child in get_children():
 		if child.global_position.x < player.global_position.x - CLEANUP_DISTANCE:
 			child.queue_free()
+
+
+# ============================================================
+# WEATHER PARTICLES
+# ============================================================
+
+var weather_spawn_timer: float = 0.0
+
+func _update_weather(delta: float) -> void:
+	if player == null:
+		return
+	weather_spawn_timer -= delta
+	if weather_spawn_timer > 0.0:
+		return
+	weather_spawn_timer = randf_range(0.05, 0.2)
+	var cam_x: float = player.global_position.x
+	var spawn_x: float = cam_x + randf_range(-500, 500)
+	match GameManager.current_biome:
+		GameManager.Biome.GARDEN:
+			if randf() < 0.3:
+				var leaf := WeatherLeafParticle.new()
+				leaf.global_position = Vector2(spawn_x, player.global_position.y - 300)
+				add_child(leaf)
+		GameManager.Biome.KITCHEN:
+			if randf() < 0.4:
+				var steam := WeatherSteamParticle.new()
+				steam.global_position = Vector2(spawn_x, player.global_position.y + 200)
+				add_child(steam)
+		GameManager.Biome.FRIDGE:
+			var snow := WeatherSnowParticle.new()
+			snow.global_position = Vector2(spawn_x, player.global_position.y - 300)
+			add_child(snow)
 
 
 # ============================================================
@@ -214,7 +248,8 @@ func _create_icecream_boss(pos: Vector2) -> void:
 # ============================================================
 
 func _scatter_obstacles(start_x: float, difficulty: float) -> void:
-	var obstacle_chance: float = 0.15 + difficulty * 0.1
+	var enemy_mult: float = GameManager.difficulty_settings[GameManager.current_difficulty]["enemy_mult"]
+	var obstacle_chance: float = (0.15 + difficulty * 0.1) * enemy_mult
 	var biome: int = GameManager.current_biome
 	var knife_weight: float = 1.0
 	var fork_weight: float = 1.0
@@ -276,7 +311,8 @@ func _create_flying_knife(pos: Vector2) -> void:
 # ============================================================
 
 func _scatter_enemies(start_x: float, difficulty: float) -> void:
-	var enemy_chance: float = 0.12 + difficulty * 0.08
+	var enemy_mult: float = GameManager.difficulty_settings[GameManager.current_difficulty]["enemy_mult"]
+	var enemy_chance: float = (0.12 + difficulty * 0.08) * enemy_mult
 	if randf() < enemy_chance:
 		var ex: float = start_x + randf_range(200, CHUNK_WIDTH - 150)
 		var ey: float = GROUND_Y
@@ -360,6 +396,24 @@ func _scatter_collectibles(start_x: float, difficulty: float) -> void:
 		var oil_y: float = GROUND_Y - randf_range(60, 160)
 		_create_olive_oil(Vector2(oil_x, oil_y))
 
+	# Magnet
+	if randf() < 0.06 + difficulty * 0.02:
+		var mag_x: float = start_x + randf_range(100, 700)
+		var mag_y: float = GROUND_Y - randf_range(60, 160)
+		_create_magnet(Vector2(mag_x, mag_y))
+
+	# Double Score
+	if randf() < 0.05 + difficulty * 0.02:
+		var ds_x: float = start_x + randf_range(100, 700)
+		var ds_y: float = GROUND_Y - randf_range(60, 160)
+		_create_double_score(Vector2(ds_x, ds_y))
+
+	# Extra Life (very rare)
+	if randf() < 0.03:
+		var el_x: float = start_x + randf_range(100, 700)
+		var el_y: float = GROUND_Y - randf_range(60, 160)
+		_create_extra_life(Vector2(el_x, el_y))
+
 
 # ============================================================
 # FACTORY HELPERS
@@ -438,6 +492,7 @@ func _create_salt(pos: Vector2) -> void:
 	salt.position = pos
 	salt.collision_layer = 4
 	salt.collision_mask = 1
+	salt.add_to_group("salt_collectible")
 
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
@@ -509,6 +564,63 @@ func _create_olive_oil(pos: Vector2) -> void:
 	add_child(oil)
 
 
+func _create_magnet(pos: Vector2) -> void:
+	var magnet := Area2D.new()
+	magnet.position = pos
+	magnet.collision_layer = 4
+	magnet.collision_mask = 1
+
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 16
+	shape.shape = circle
+	magnet.add_child(shape)
+
+	var visual := MagnetVisual.new()
+	magnet.add_child(visual)
+
+	magnet.body_entered.connect(_on_magnet_collected.bind(magnet))
+	add_child(magnet)
+
+
+func _create_double_score(pos: Vector2) -> void:
+	var ds := Area2D.new()
+	ds.position = pos
+	ds.collision_layer = 4
+	ds.collision_mask = 1
+
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 18
+	shape.shape = circle
+	ds.add_child(shape)
+
+	var visual := DoubleScoreVisual.new()
+	ds.add_child(visual)
+
+	ds.body_entered.connect(_on_double_score_collected.bind(ds))
+	add_child(ds)
+
+
+func _create_extra_life(pos: Vector2) -> void:
+	var el := Area2D.new()
+	el.position = pos
+	el.collision_layer = 4
+	el.collision_mask = 1
+
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = 16
+	shape.shape = circle
+	el.add_child(shape)
+
+	var visual := ExtraLifeVisual.new()
+	el.add_child(visual)
+
+	el.body_entered.connect(_on_extra_life_collected.bind(el))
+	add_child(el)
+
+
 # ============================================================
 # COLLECTIBLE CALLBACKS
 # ============================================================
@@ -539,6 +651,27 @@ func _on_oil_collected(body: Node2D, oil: Area2D) -> void:
 		body.collect_oil()
 		_spawn_collect_effect(oil.global_position, Color(0.95, 0.85, 0.3))
 		oil.queue_free()
+
+
+func _on_magnet_collected(body: Node2D, magnet: Area2D) -> void:
+	if body is CharacterBody2D and body.has_method("collect_magnet"):
+		body.collect_magnet()
+		_spawn_collect_effect(magnet.global_position, Color(0.6, 0.2, 0.8))
+		magnet.queue_free()
+
+
+func _on_double_score_collected(body: Node2D, ds: Area2D) -> void:
+	if body is CharacterBody2D and body.has_method("collect_double_score"):
+		body.collect_double_score()
+		_spawn_collect_effect(ds.global_position, Color(1.0, 0.85, 0.2))
+		ds.queue_free()
+
+
+func _on_extra_life_collected(body: Node2D, el: Area2D) -> void:
+	if body is CharacterBody2D and body.has_method("collect_extra_life"):
+		body.collect_extra_life()
+		_spawn_collect_effect(el.global_position, Color(0.3, 0.85, 0.2))
+		el.queue_free()
 
 
 func _spawn_collect_effect(pos: Vector2, color: Color) -> void:
@@ -3200,3 +3333,259 @@ class IcePatchVisual extends Node2D:
 			var angle: float = float(i) / float(segments) * TAU
 			pts.append(Vector2(cx + cos(angle) * rx, cy + sin(angle) * ry))
 		draw_colored_polygon(pts, color)
+
+
+# ============================================================
+# MAGNET VISUAL
+# ============================================================
+
+class MagnetVisual extends Node2D:
+	var pulse_timer: float = 0.0
+	var bob_offset: float = 0.0
+
+	func _ready() -> void:
+		bob_offset = randf() * TAU
+
+	func _process(delta: float) -> void:
+		pulse_timer += delta
+		bob_offset += delta * 3.0
+		queue_redraw()
+
+	func _draw() -> void:
+		var bob: float = sin(bob_offset) * 4.0
+		var center := Vector2(0, bob)
+		var purple := Color(0.6, 0.15, 0.75)
+		var light_purple := Color(0.75, 0.35, 0.9)
+
+		# Outer magnetic field glow
+		var glow_alpha: float = 0.1 + sin(pulse_timer * 3.0) * 0.06
+		draw_circle(center, 22, Color(0.6, 0.2, 0.8, glow_alpha))
+
+		# Horseshoe magnet body - U shape using lines
+		# Left arm
+		draw_line(center + Vector2(-8, -12), center + Vector2(-8, 6), purple, 5.0)
+		# Right arm
+		draw_line(center + Vector2(8, -12), center + Vector2(8, 6), purple, 5.0)
+		# Bottom curve (arc approximation with lines)
+		draw_line(center + Vector2(-8, 6), center + Vector2(-4, 10), purple, 5.0)
+		draw_line(center + Vector2(-4, 10), center + Vector2(4, 10), purple, 5.0)
+		draw_line(center + Vector2(4, 10), center + Vector2(8, 6), purple, 5.0)
+
+		# Red and blue tips
+		draw_line(center + Vector2(-8, -12), center + Vector2(-8, -6), Color(0.9, 0.2, 0.2), 5.0)
+		draw_line(center + Vector2(8, -12), center + Vector2(8, -6), Color(0.2, 0.4, 0.9), 5.0)
+
+		# Magnetic field lines (animated)
+		var field_phase: float = fmod(pulse_timer * 2.0, TAU)
+		for i in range(3):
+			var offset_y: float = -14.0 - float(i) * 6.0
+			var spread: float = 12.0 + float(i) * 4.0
+			var alpha: float = (0.4 - float(i) * 0.1) * (0.7 + sin(field_phase + float(i)) * 0.3)
+			draw_arc(center + Vector2(0, offset_y), spread, 0, PI, 8, light_purple * Color(1, 1, 1, alpha), 1.0)
+
+
+# ============================================================
+# DOUBLE SCORE VISUAL
+# ============================================================
+
+class DoubleScoreVisual extends Node2D:
+	var glow_timer: float = 0.0
+	var bob_offset: float = 0.0
+	var spin_timer: float = 0.0
+
+	func _ready() -> void:
+		bob_offset = randf() * TAU
+
+	func _process(delta: float) -> void:
+		glow_timer += delta
+		bob_offset += delta * 3.0
+		spin_timer += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var bob: float = sin(bob_offset) * 4.0
+		var center := Vector2(0, bob)
+		var gold := Color(1.0, 0.85, 0.2)
+		var bright_gold := Color(1.0, 0.95, 0.5)
+
+		# Outer glow
+		var glow_alpha: float = 0.15 + sin(glow_timer * 3.5) * 0.08
+		draw_circle(center, 24, Color(1.0, 0.9, 0.3, glow_alpha))
+
+		# Star shape (5-pointed)
+		var star_pts := PackedVector2Array()
+		for i in range(10):
+			var angle: float = float(i) / 10.0 * TAU - PI / 2.0
+			var r: float = 16.0 if i % 2 == 0 else 8.0
+			star_pts.append(center + Vector2(cos(angle) * r, sin(angle) * r))
+		draw_colored_polygon(star_pts, gold)
+
+		# Inner star highlight
+		var inner_pts := PackedVector2Array()
+		for i in range(10):
+			var angle: float = float(i) / 10.0 * TAU - PI / 2.0
+			var r: float = 10.0 if i % 2 == 0 else 5.0
+			inner_pts.append(center + Vector2(cos(angle) * r, sin(angle) * r))
+		draw_colored_polygon(inner_pts, bright_gold)
+
+		# "2" shape
+		draw_line(center + Vector2(-6, -4), center + Vector2(-1, -4), Color.WHITE, 1.5)
+		draw_line(center + Vector2(-1, -4), center + Vector2(-1, -1), Color.WHITE, 1.5)
+		draw_line(center + Vector2(-1, -1), center + Vector2(-6, -1), Color.WHITE, 1.5)
+		draw_line(center + Vector2(-6, -1), center + Vector2(-6, 3), Color.WHITE, 1.5)
+		draw_line(center + Vector2(-6, 3), center + Vector2(-1, 3), Color.WHITE, 1.5)
+		# "X" shape
+		draw_line(center + Vector2(1, -4), center + Vector2(6, 3), Color.WHITE, 1.5)
+		draw_line(center + Vector2(6, -4), center + Vector2(1, 3), Color.WHITE, 1.5)
+
+		# Sparkle rays
+		var sparkle_phase: float = fmod(glow_timer * 1.5, 1.0)
+		if sparkle_phase < 0.4:
+			var s: float = sparkle_phase / 0.4
+			for i in range(5):
+				var angle: float = float(i) / 5.0 * TAU + spin_timer
+				var from: Vector2 = center + Vector2(cos(angle) * 16, sin(angle) * 16)
+				var to: Vector2 = center + Vector2(cos(angle) * (16 + 6 * s), sin(angle) * (16 + 6 * s))
+				draw_line(from, to, Color(1, 1, 1, 0.7 * (1.0 - s)), 1.0)
+
+
+# ============================================================
+# EXTRA LIFE VISUAL
+# ============================================================
+
+class ExtraLifeVisual extends Node2D:
+	var bob_offset: float = 0.0
+	var pulse_timer: float = 0.0
+
+	func _ready() -> void:
+		bob_offset = randf() * TAU
+
+	func _process(delta: float) -> void:
+		bob_offset += delta * 3.0
+		pulse_timer += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		var bob: float = sin(bob_offset) * 4.0
+		var center := Vector2(0, bob)
+		var cucumber_green := Color(0.3, 0.75, 0.2)
+		var light_green := Color(0.45, 0.85, 0.35)
+
+		# Outer glow
+		var glow_alpha: float = 0.1 + sin(pulse_timer * 2.5) * 0.05
+		draw_circle(center, 20, Color(0.3, 0.85, 0.2, glow_alpha))
+
+		# Small cucumber head (oval)
+		var head_pts := PackedVector2Array()
+		for i in range(16):
+			var angle: float = float(i) / 16.0 * TAU
+			head_pts.append(center + Vector2(cos(angle) * 10, sin(angle) * 12))
+		draw_colored_polygon(head_pts, cucumber_green)
+
+		# Highlight
+		var hl_pts := PackedVector2Array()
+		for i in range(16):
+			var angle: float = float(i) / 16.0 * TAU
+			hl_pts.append(center + Vector2(-2 + cos(angle) * 5, -2 + sin(angle) * 7))
+		draw_colored_polygon(hl_pts, light_green)
+
+		# Tiny eyes
+		draw_circle(center + Vector2(-3, -3), 2.5, Color(0.97, 0.97, 0.97))
+		draw_circle(center + Vector2(3, -3), 2.5, Color(0.97, 0.97, 0.97))
+		draw_circle(center + Vector2(-3, -3), 1.2, Color(0.08, 0.08, 0.08))
+		draw_circle(center + Vector2(3, -3), 1.2, Color(0.08, 0.08, 0.08))
+
+		# "+" sign
+		var plus_color := Color(1.0, 1.0, 1.0, 0.9)
+		draw_line(center + Vector2(0, 6), center + Vector2(0, 14), plus_color, 2.5)
+		draw_line(center + Vector2(-4, 10), center + Vector2(4, 10), plus_color, 2.5)
+
+
+# ============================================================
+# WEATHER PARTICLES
+# ============================================================
+
+class WeatherLeafParticle extends Node2D:
+	var vel := Vector2(0, 0)
+	var lifetime: float = 0.0
+	var sway_offset: float = 0.0
+	var leaf_rotation: float = 0.0
+
+	func _ready() -> void:
+		vel = Vector2(randf_range(-20, 20), randf_range(30, 60))
+		sway_offset = randf() * TAU
+		leaf_rotation = randf() * TAU
+
+	func _process(delta: float) -> void:
+		lifetime += delta
+		sway_offset += delta * 2.0
+		leaf_rotation += delta * 1.5
+		global_position += vel * delta
+		global_position.x += sin(sway_offset) * 30.0 * delta
+		if lifetime > 6.0:
+			queue_free()
+		queue_redraw()
+
+	func _draw() -> void:
+		var alpha: float = 1.0 - (lifetime / 6.0)
+		var leaf_green := Color(0.3, 0.7, 0.15, alpha)
+		# Small rectangle leaf
+		var r: float = leaf_rotation
+		var hw: float = 4.0
+		var hh: float = 2.0
+		var pts := PackedVector2Array([
+			Vector2(cos(r) * hw - sin(r) * hh, sin(r) * hw + cos(r) * hh),
+			Vector2(cos(r) * -hw - sin(r) * hh, sin(r) * -hw + cos(r) * hh),
+			Vector2(cos(r) * -hw - sin(r) * -hh, sin(r) * -hw + cos(r) * -hh),
+			Vector2(cos(r) * hw - sin(r) * -hh, sin(r) * hw + cos(r) * -hh),
+		])
+		draw_colored_polygon(pts, leaf_green)
+
+
+class WeatherSteamParticle extends Node2D:
+	var vel := Vector2(0, 0)
+	var lifetime: float = 0.0
+	var max_lifetime: float = 3.0
+
+	func _ready() -> void:
+		vel = Vector2(randf_range(-15, 15), randf_range(-40, -70))
+		max_lifetime = randf_range(2.0, 4.0)
+
+	func _process(delta: float) -> void:
+		lifetime += delta
+		global_position += vel * delta
+		vel.x += randf_range(-10, 10) * delta
+		if lifetime > max_lifetime:
+			queue_free()
+		queue_redraw()
+
+	func _draw() -> void:
+		var t: float = lifetime / max_lifetime
+		var alpha: float = (1.0 - t) * 0.4
+		var radius: float = 3.0 + t * 5.0
+		draw_circle(Vector2.ZERO, radius, Color(1.0, 1.0, 1.0, alpha))
+
+
+class WeatherSnowParticle extends Node2D:
+	var vel := Vector2(0, 0)
+	var lifetime: float = 0.0
+	var sway_offset: float = 0.0
+	var snow_size: float = 2.0
+
+	func _ready() -> void:
+		vel = Vector2(0, randf_range(25, 50))
+		sway_offset = randf() * TAU
+		snow_size = randf_range(1.5, 3.0)
+
+	func _process(delta: float) -> void:
+		lifetime += delta
+		sway_offset += delta * 1.5
+		global_position += vel * delta
+		global_position.x += sin(sway_offset) * 25.0 * delta
+		if lifetime > 8.0:
+			queue_free()
+		queue_redraw()
+
+	func _draw() -> void:
+		var alpha: float = 1.0 - (lifetime / 8.0)
+		draw_circle(Vector2.ZERO, snow_size, Color(1.0, 1.0, 1.0, alpha * 0.7))
