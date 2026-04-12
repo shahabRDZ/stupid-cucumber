@@ -313,9 +313,9 @@ class DeadCucumber extends Control:
 		draw_colored_polygon(stripe_points, body_color.lightened(0.15))
 
 		# Bumps
-		draw_circle(Vector2(center_x + 12, cy - 5), 2.5, body_dark.lerped(body_color, 0.5))
-		draw_circle(Vector2(center_x - 8, cy - 4), 2.0, body_dark.lerped(body_color, 0.5))
-		draw_circle(Vector2(center_x + 18, cy + 2), 2.0, body_dark.lerped(body_color, 0.5))
+		draw_circle(Vector2(center_x + 12, cy - 5), 2.5, body_dark.lerp(body_color, 0.5))
+		draw_circle(Vector2(center_x - 8, cy - 4), 2.0, body_dark.lerp(body_color, 0.5))
+		draw_circle(Vector2(center_x + 18, cy + 2), 2.0, body_dark.lerp(body_color, 0.5))
 
 		# Stem (on right side since lying down)
 		draw_rect(Rect2(center_x + 26, cy - 3, 6, 5), Color(0.2, 0.45, 0.1))

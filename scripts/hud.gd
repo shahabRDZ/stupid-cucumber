@@ -441,7 +441,7 @@ class PowerBar extends Control:
 			draw_rect(Rect2(Vector2(highlight_x, bar_rect.position.y), Vector2(2, bar_rect.size.y)), Color(1, 1, 1, 0.3))
 
 		# Border
-		draw_rect(bar_rect, border_color.lerped(Color.WHITE, 0.2), false, 1.5)
+		draw_rect(bar_rect, border_color.lerp(Color.WHITE, 0.2), false, 1.5)
 
 		# Icon on the left side
 		var icon_center := Vector2(12, size.y / 2.0)

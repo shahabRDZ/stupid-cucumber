@@ -189,17 +189,17 @@ class CucumberPreview extends Node2D:
 		# Main body ellipse
 		_draw_filled_ellipse(Vector2(0, 0), Vector2(18, 28), body_color)
 		# Light stripe
-		_draw_filled_ellipse(Vector2(-5, 0), Vector2(7, 22), body_light.lerped(body_color, 0.4))
+		_draw_filled_ellipse(Vector2(-5, 0), Vector2(7, 22), body_light.lerp(body_color, 0.4))
 		# Another light stripe
-		_draw_filled_ellipse(Vector2(4, -2), Vector2(5, 18), body_light.lerped(body_color, 0.5))
+		_draw_filled_ellipse(Vector2(4, -2), Vector2(5, 18), body_light.lerp(body_color, 0.5))
 
 		# Bumps on body
-		draw_circle(Vector2(10, -10), 3.5, body_dark.lerped(body_color, 0.5))
-		draw_circle(Vector2(12, 4), 3.0, body_dark.lerped(body_color, 0.5))
-		draw_circle(Vector2(-11, 2), 2.8, body_dark.lerped(body_color, 0.5))
-		draw_circle(Vector2(8, 14), 2.5, body_dark.lerped(body_color, 0.5))
-		draw_circle(Vector2(-9, -12), 2.5, body_dark.lerped(body_color, 0.5))
-		draw_circle(Vector2(-7, 15), 2.2, body_dark.lerped(body_color, 0.5))
+		draw_circle(Vector2(10, -10), 3.5, body_dark.lerp(body_color, 0.5))
+		draw_circle(Vector2(12, 4), 3.0, body_dark.lerp(body_color, 0.5))
+		draw_circle(Vector2(-11, 2), 2.8, body_dark.lerp(body_color, 0.5))
+		draw_circle(Vector2(8, 14), 2.5, body_dark.lerp(body_color, 0.5))
+		draw_circle(Vector2(-9, -12), 2.5, body_dark.lerp(body_color, 0.5))
+		draw_circle(Vector2(-7, 15), 2.2, body_dark.lerp(body_color, 0.5))
 
 		# --- Stem ---
 		var stem_color := Color(0.2, 0.5, 0.1)
