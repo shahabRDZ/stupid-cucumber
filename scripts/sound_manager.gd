@@ -20,6 +20,8 @@ func _setup_music() -> void:
 
 
 func _on_play_sound(sound_name: String) -> void:
+	if not GameManager.sfx_enabled:
+		return
 	match sound_name:
 		"collect_salt":
 			_play_tone(800.0, 0.08, -8.0)
@@ -77,6 +79,21 @@ func _on_play_sound(sound_name: String) -> void:
 		"hit":
 			_play_tone(150.0, 0.15, -4.0)
 			_play_tone(100.0, 0.2, -4.0, 0.08)
+		"magnet":
+			_play_tone(350.0, 0.12, -8.0)
+			_play_tone(500.0, 0.1, -8.0, 0.06)
+			_play_tone(650.0, 0.08, -10.0, 0.12)
+		"double_score":
+			_play_tone(700.0, 0.1, -8.0)
+			_play_tone(900.0, 0.08, -8.0, 0.05)
+			_play_tone(1100.0, 0.1, -8.0, 0.1)
+			_play_tone(1400.0, 0.08, -10.0, 0.15)
+		"extra_life":
+			_play_tone(500.0, 0.15, -6.0)
+			_play_tone(650.0, 0.12, -6.0, 0.08)
+			_play_tone(800.0, 0.1, -6.0, 0.15)
+			_play_tone(1000.0, 0.12, -6.0, 0.22)
+			_play_tone(1200.0, 0.15, -6.0, 0.3)
 
 
 func _play_tone(freq: float, duration: float, volume_db: float, delay: float = 0.0) -> void:
