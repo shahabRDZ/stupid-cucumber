@@ -23,6 +23,13 @@ signal skin_changed(skin_id: String)
 signal tutorial_step(step: int)
 signal play_sound(sound_name: String)
 signal pause_toggled(is_paused: bool)
+signal magnet_activated
+signal magnet_ended
+signal double_score_activated
+signal double_score_ended
+signal slow_mo_started
+signal slow_mo_ended
+signal extra_life_collected
 
 # Score & collectibles
 var score: int = 0
@@ -55,6 +62,39 @@ var oil_duration: float = 5.0
 var lives: int = 6
 const MAX_LIVES: int = 6
 var respawn_position: Vector2 = Vector2(200, 400)
+
+# New power-ups
+var is_magnet_active: bool = false
+var magnet_timer: float = 0.0
+var magnet_duration: float = 8.0
+var is_double_score: bool = false
+var double_score_timer: float = 0.0
+var double_score_duration: float = 10.0
+
+# Difficulty
+enum Difficulty { EASY, NORMAL, HARD }
+var current_difficulty: Difficulty = Difficulty.NORMAL
+var difficulty_settings: Dictionary = {
+	Difficulty.EASY: {"lives": 9, "enemy_mult": 0.5, "speed_mult": 0.8, "label": "EASY"},
+	Difficulty.NORMAL: {"lives": 6, "enemy_mult": 1.0, "speed_mult": 1.0, "label": "NORMAL"},
+	Difficulty.HARD: {"lives": 3, "enemy_mult": 1.5, "speed_mult": 1.2, "label": "HARD"},
+}
+
+# Daily challenge
+var daily_seed: int = 0
+var is_daily_challenge: bool = false
+var daily_best_score: int = 0
+
+# Slow motion
+var is_slow_mo: bool = false
+var slow_mo_timer: float = 0.0
+var slow_mo_duration: float = 2.0
+
+# Audio settings
+var music_volume: float = 0.8
+var sfx_volume: float = 1.0
+var music_enabled: bool = true
+var sfx_enabled: bool = true
 
 # Game state
 var is_game_over: bool = false
@@ -94,6 +134,10 @@ var skin_catalog: Array[Dictionary] = [
 	{"id": "fire", "name": "Chili Cucumber", "cost": 200, "body": Color(0.85, 0.25, 0.15), "highlight": Color(0.95, 0.45, 0.25)},
 	{"id": "galaxy", "name": "Space Pickle", "cost": 300, "body": Color(0.3, 0.15, 0.5), "highlight": Color(0.5, 0.3, 0.7)},
 	{"id": "rainbow", "name": "Rainbow Cuke", "cost": 500, "body": Color(0.9, 0.4, 0.6), "highlight": Color(0.4, 0.8, 0.9)},
+	{"id": "ninja", "name": "Ninja Pickle", "cost": 400, "body": Color(0.15, 0.15, 0.2), "highlight": Color(0.25, 0.25, 0.35)},
+	{"id": "zombie", "name": "Zombie Cuke", "cost": 350, "body": Color(0.4, 0.55, 0.3), "highlight": Color(0.5, 0.65, 0.35)},
+	{"id": "king", "name": "King Cucumber", "cost": 600, "body": Color(0.6, 0.2, 0.5), "highlight": Color(0.75, 0.35, 0.6)},
+	{"id": "crystal", "name": "Crystal Pickle", "cost": 800, "body": Color(0.65, 0.85, 0.9), "highlight": Color(0.8, 0.95, 1.0)},
 ]
 
 # Tutorial
@@ -187,6 +231,24 @@ func _process(delta: float) -> void:
 		if oil_timer <= 0:
 			end_oil()
 
+	# Magnet timer
+	if is_magnet_active:
+		magnet_timer -= delta
+		if magnet_timer <= 0:
+			end_magnet()
+
+	# Double score timer
+	if is_double_score:
+		double_score_timer -= delta
+		if double_score_timer <= 0:
+			end_double_score()
+
+	# Slow motion
+	if is_slow_mo:
+		slow_mo_timer -= delta
+		if slow_mo_timer <= 0:
+			end_slow_mo()
+
 	# Biome cycling
 	biome_distance += delta * game_speed_multiplier * 10.0
 	if biome_distance >= BIOME_CHANGE_INTERVAL and not is_boss_active:
@@ -212,7 +274,8 @@ func add_salt(amount: int = 1) -> void:
 	combo_changed.emit(combo)
 
 	var combo_multiplier: int = mini(combo, 10)
-	var points: int = amount * 10 * combo_multiplier
+	var score_mult: int = 2 if is_double_score else 1
+	var points: int = amount * 10 * combo_multiplier * score_mult
 
 	salt_collected += amount
 	total_salt_ever += amount
@@ -278,6 +341,70 @@ func end_oil() -> void:
 	is_oil_active = false
 	oil_timer = 0.0
 	oil_ended.emit()
+
+
+func activate_magnet() -> void:
+	is_magnet_active = true
+	magnet_timer = magnet_duration
+	magnet_activated.emit()
+	play_sound.emit("magnet")
+
+
+func end_magnet() -> void:
+	is_magnet_active = false
+	magnet_timer = 0.0
+	magnet_ended.emit()
+
+
+func activate_double_score() -> void:
+	is_double_score = true
+	double_score_timer = double_score_duration
+	double_score_activated.emit()
+	play_sound.emit("double_score")
+
+
+func end_double_score() -> void:
+	is_double_score = false
+	double_score_timer = 0.0
+	double_score_ended.emit()
+
+
+func add_extra_life() -> void:
+	if lives < MAX_LIVES:
+		lives += 1
+		lives_changed.emit(lives)
+		extra_life_collected.emit()
+		play_sound.emit("extra_life")
+
+
+func start_slow_mo(duration: float = 2.0) -> void:
+	is_slow_mo = true
+	slow_mo_timer = duration
+	slow_mo_duration = duration
+	Engine.time_scale = 0.4
+	slow_mo_started.emit()
+
+
+func end_slow_mo() -> void:
+	is_slow_mo = false
+	Engine.time_scale = 1.0
+	slow_mo_ended.emit()
+
+
+func set_difficulty(diff: Difficulty) -> void:
+	current_difficulty = diff
+	var settings: Dictionary = difficulty_settings[diff]
+	lives = settings["lives"]
+	lives_changed.emit(lives)
+
+
+func start_daily_challenge() -> void:
+	is_daily_challenge = true
+	# Seed based on date
+	var date: Dictionary = Time.get_date_dict_from_system()
+	daily_seed = date["year"] * 10000 + date["month"] * 100 + date["day"]
+	seed(daily_seed)
+	set_difficulty(Difficulty.NORMAL)
 
 
 func add_distance(dist: float) -> void:
@@ -419,8 +546,15 @@ func restart_game() -> void:
 	shield_hits = 0
 	is_oil_active = false
 	oil_timer = 0.0
+	is_magnet_active = false
+	magnet_timer = 0.0
+	is_double_score = false
+	double_score_timer = 0.0
+	is_slow_mo = false
+	Engine.time_scale = 1.0
 	is_game_over = false
 	is_paused = false
+	is_daily_challenge = false
 	is_boss_active = false
 	boss_hp = 0
 	distance_traveled = 0.0
