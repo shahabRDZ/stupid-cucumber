@@ -18,10 +18,12 @@ const TRANSITION_DURATION: float = 2.0
 var sky_layer: ParallaxLayer
 var far_layer: ParallaxLayer
 var mid_layer: ParallaxLayer
+var weather_layer: ParallaxLayer
 
 var sky_drawer: SkyDrawer
 var far_drawer: FarBGDrawer
 var mid_drawer: MidBGDrawer
+var weather_drawer: WeatherDrawer
 
 
 func _ready() -> void:
@@ -50,6 +52,15 @@ func _ready() -> void:
 	mid_drawer.bg = self
 	mid_layer.add_child(mid_drawer)
 	add_child(mid_layer)
+
+	# Weather particle layer
+	weather_layer = ParallaxLayer.new()
+	weather_layer.motion_scale = Vector2(0.8, 0.8)
+	weather_layer.motion_mirroring = Vector2(1600, 0)
+	weather_drawer = WeatherDrawer.new()
+	weather_drawer.bg = self
+	weather_layer.add_child(weather_drawer)
+	add_child(weather_layer)
 
 	# Connect biome signal
 	GameManager.biome_changed.connect(_on_biome_changed)
@@ -1671,3 +1682,66 @@ class MidBGDrawer extends Node2D:
 		draw_line(pos + Vector2(0, 2.8), pos + Vector2(0, 8), Color(0.7, 0.82, 0.95, 0.07), 1.0)
 		# Tiny trail dots
 		draw_circle(pos + Vector2(0, 10), 0.8, Color(0.7, 0.82, 0.95, 0.05))
+
+
+# ============================================================
+# WEATHER DRAWER - Phase 4 weather particle system
+# ============================================================
+
+class WeatherDrawer extends Node2D:
+	var bg = null  # reference to parent script
+	var particles: Array[Dictionary] = []
+	var max_particles: int = 40
+
+	func _process(delta: float) -> void:
+		if bg == null:
+			return
+		var biome: int = GameManager.current_biome
+
+		# Spawn new particles
+		while particles.size() < max_particles:
+			var p: Dictionary = {}
+			p["x"] = randf_range(-800, 2400)
+			p["y"] = randf_range(-400, -50)
+			p["speed_y"] = randf_range(30, 80)
+			p["speed_x"] = randf_range(-15, 15)
+			p["size"] = randf_range(2, 6)
+			p["alpha"] = randf_range(0.3, 0.7)
+			p["type"] = biome
+			particles.append(p)
+
+		# Update particles
+		var to_remove: Array[int] = []
+		for i in range(particles.size()):
+			particles[i]["y"] += particles[i]["speed_y"] * delta
+			particles[i]["x"] += particles[i]["speed_x"] * delta
+			# FRIDGE: add sway
+			if particles[i]["type"] == 2:
+				particles[i]["x"] += sin(particles[i]["y"] * 0.02) * 20.0 * delta
+			# KITCHEN: steam rises
+			if particles[i]["type"] == 1:
+				particles[i]["y"] -= particles[i]["speed_y"] * 2.0 * delta  # net upward
+				particles[i]["alpha"] -= delta * 0.3
+			if particles[i]["y"] > 800 or particles[i]["alpha"] <= 0:
+				to_remove.append(i)
+
+		# Remove expired (reverse order)
+		to_remove.reverse()
+		for idx in to_remove:
+			particles.remove_at(idx)
+
+		queue_redraw()
+
+	func _draw() -> void:
+		for p in particles:
+			var biome_type: int = p["type"]
+			match biome_type:
+				0:  # GARDEN - leaves
+					var leaf_color := Color(0.3, 0.7, 0.2, p["alpha"])
+					draw_rect(Rect2(p["x"], p["y"], p["size"] * 1.5, p["size"]), leaf_color)
+				1:  # KITCHEN - steam
+					var steam_color := Color(1.0, 1.0, 1.0, p["alpha"] * 0.4)
+					draw_circle(Vector2(p["x"], p["y"]), p["size"], steam_color)
+				2:  # FRIDGE - snow
+					var snow_color := Color(1.0, 1.0, 1.0, p["alpha"])
+					draw_circle(Vector2(p["x"], p["y"]), p["size"] * 0.5, snow_color)

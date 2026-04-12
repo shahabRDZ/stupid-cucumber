@@ -21,11 +21,18 @@ const ZOOM_SPEED_FACTOR: float = 0.0005
 const MIN_ZOOM: float = 1.4
 const MAX_ZOOM: float = 2.0
 
+# Slow-motion effects
+var slow_mo_zoom_offset: float = 0.0
+var slow_mo_active: bool = false
+
 
 func _ready() -> void:
 	zoom = base_zoom
 	GameManager.chili_activated.connect(_on_chili_activated)
 	GameManager.player_died.connect(_on_player_died)
+	GameManager.slow_mo_started.connect(_on_slow_mo_started)
+	GameManager.slow_mo_ended.connect(_on_slow_mo_ended)
+	GameManager.boss_spawned.connect(_on_boss_spawned)
 
 
 func _process(delta: float) -> void:
@@ -54,10 +61,17 @@ func _process(delta: float) -> void:
 	else:
 		offset = Vector2.ZERO
 
+	# Ease slow-mo zoom offset back toward 0
+	slow_mo_zoom_offset = lerpf(slow_mo_zoom_offset, 0.0, 3.0 * delta)
+
 	# Dynamic zoom - zoom out when going fast
 	var speed_factor := absf(target.velocity.x) * ZOOM_SPEED_FACTOR
-	target_zoom = Vector2.ONE * clampf(base_zoom.x - speed_factor, MIN_ZOOM, MAX_ZOOM)
+	target_zoom = Vector2.ONE * clampf(base_zoom.x - speed_factor + slow_mo_zoom_offset, MIN_ZOOM, MAX_ZOOM)
 	zoom = zoom.lerp(target_zoom, 2.0 * delta)
+
+	# Chromatic-aberration-like offset during slow-mo
+	if slow_mo_active:
+		offset += Vector2(randf_range(-1.0, 1.0), randf_range(-0.5, 0.5))
 
 
 func trigger_shake(intensity: float = 8.0, duration: float = 0.3) -> void:
@@ -72,3 +86,19 @@ func _on_chili_activated(_duration: float) -> void:
 
 func _on_player_died() -> void:
 	trigger_shake(15.0, 0.8)
+
+
+func _on_slow_mo_started() -> void:
+	slow_mo_active = true
+	slow_mo_zoom_offset = 0.3  # temporary zoom in
+
+
+func _on_slow_mo_ended() -> void:
+	slow_mo_active = false
+	slow_mo_zoom_offset = 0.0
+
+
+func _on_boss_spawned() -> void:
+	# Dramatic zoom out when boss appears
+	slow_mo_zoom_offset = -0.4
+	trigger_shake(10.0, 0.6)
