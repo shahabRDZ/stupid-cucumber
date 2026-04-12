@@ -22,6 +22,7 @@ config/features=PackedStringArray("4.6", "Mobile")
 [autoload]
 
 GameManager="*res://scripts/game_manager.gd"
+SoundManager="*res://scripts/sound_manager.gd"
 
 [display]
 

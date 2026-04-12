@@ -72,6 +72,19 @@ func _ready() -> void:
 	game_over.set_script(go_script)
 	add_child(game_over)
 
+	# -- PAUSE SCREEN --
+	var pause_script = load("res://scripts/pause_screen.gd")
+	var pause_screen := CanvasLayer.new()
+	pause_screen.set_script(pause_script)
+	add_child(pause_screen)
+
+	# -- TUTORIAL (first play only) --
+	if not GameManager.tutorial_completed:
+		var tut_script = load("res://scripts/tutorial_overlay.gd")
+		var tutorial := CanvasLayer.new()
+		tutorial.set_script(tut_script)
+		add_child(tutorial)
+
 	# -- WORLD BOUNDARY (kill zone below) --
 	var kill_zone := Area2D.new()
 	kill_zone.position = Vector2(0, 1000)
