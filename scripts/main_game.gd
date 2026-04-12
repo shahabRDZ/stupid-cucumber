@@ -45,8 +45,8 @@ func _ready() -> void:
 	camera.set_script(camera_script)
 	camera.target = player
 	camera.position = player.position
-	camera.make_current()
 	add_child(camera)
+	camera.make_current()
 
 	# Link parallax to camera
 	parallax_bg.camera = camera

@@ -1238,7 +1238,7 @@ class AngryTomatoVisual extends Node2D:
 		var bounce: float = abs(sin(anim_timer * 6.0)) * 2.0
 
 		# Shadow
-		draw_ellipse(Rect2(-12, 12, 24, 6), Color(0, 0, 0, 0.15))
+		_draw_filled_ellipse(Rect2(-12, 12, 24, 6), Color(0, 0, 0, 0.15))
 
 		# Main body - red tomato
 		var body_color := Color(0.85, 0.15, 0.1)
@@ -1286,7 +1286,7 @@ class AngryTomatoVisual extends Node2D:
 
 	func _draw_squashed() -> void:
 		# Flattened tomato - splat!
-		draw_ellipse(Rect2(-18, -5, 36, 10), Color(0.85, 0.15, 0.1))
+		_draw_filled_ellipse(Rect2(-18, -5, 36, 10), Color(0.85, 0.15, 0.1))
 		# Tomato juice splatter
 		draw_circle(Vector2(-12, 2), 3, Color(0.9, 0.2, 0.1, 0.7))
 		draw_circle(Vector2(10, 3), 2.5, Color(0.9, 0.2, 0.1, 0.7))
@@ -1295,7 +1295,7 @@ class AngryTomatoVisual extends Node2D:
 		draw_circle(Vector2(-6, 0), 1.5, Color(0.95, 0.85, 0.5))
 		draw_circle(Vector2(4, 1), 1.2, Color(0.95, 0.85, 0.5))
 
-	func draw_ellipse(rect: Rect2, color: Color) -> void:
+	func _draw_filled_ellipse(rect: Rect2, color: Color) -> void:
 		var cx: float = rect.position.x + rect.size.x * 0.5
 		var cy: float = rect.position.y + rect.size.y * 0.5
 		var rx: float = rect.size.x * 0.5
@@ -1442,19 +1442,19 @@ class CryingOnionVisual extends Node2D:
 		draw_circle(Vector2(0, 0), 55, Color(0.5, 0.6, 0.9, 0.04))
 
 		# Shadow
-		_draw_ellipse(Rect2(-10, 13, 20, 5), Color(0, 0, 0, 0.12))
+		__draw_filled_ellipse(Rect2(-10, 13, 20, 5), Color(0, 0, 0, 0.12))
 
 		# Outer layer - purple
 		var outer_color := Color(0.6, 0.35, 0.6)
-		_draw_ellipse(Rect2(-13 + wobble * 0.3, -14, 26, 30), outer_color)
+		__draw_filled_ellipse(Rect2(-13 + wobble * 0.3, -14, 26, 30), outer_color)
 
 		# Middle layer - lighter purple
 		var mid_color := Color(0.72, 0.5, 0.7)
-		_draw_ellipse(Rect2(-11, -12 + wobble * 0.2, 22, 26), mid_color)
+		__draw_filled_ellipse(Rect2(-11, -12 + wobble * 0.2, 22, 26), mid_color)
 
 		# Inner layer - white/cream
 		var inner_color := Color(0.92, 0.88, 0.82)
-		_draw_ellipse(Rect2(-9, -10, 18, 22), inner_color)
+		__draw_filled_ellipse(Rect2(-9, -10, 18, 22), inner_color)
 
 		# Layer lines (rings of onion)
 		draw_arc(Vector2(0, 1), 11, 0.5, 2.6, 10, outer_color.darkened(0.15), 1.0)
@@ -1472,8 +1472,8 @@ class CryingOnionVisual extends Node2D:
 		# Big sad eyes
 		var eye_y: float = -2.0
 		# Eye whites (larger, droopy)
-		_draw_ellipse(Rect2(-8, eye_y - 4, 8, 9), Color.WHITE)
-		_draw_ellipse(Rect2(0, eye_y - 4, 8, 9), Color.WHITE)
+		__draw_filled_ellipse(Rect2(-8, eye_y - 4, 8, 9), Color.WHITE)
+		__draw_filled_ellipse(Rect2(0, eye_y - 4, 8, 9), Color.WHITE)
 		# Pupils (looking down sadly)
 		draw_circle(Vector2(-4, eye_y + 1), 2.5, Color(0.15, 0.1, 0.2))
 		draw_circle(Vector2(4, eye_y + 1), 2.5, Color(0.15, 0.1, 0.2))
@@ -1503,8 +1503,8 @@ class CryingOnionVisual extends Node2D:
 
 	func _draw_squashed() -> void:
 		# Flattened onion
-		_draw_ellipse(Rect2(-18, -4, 36, 8), Color(0.72, 0.5, 0.7))
-		_draw_ellipse(Rect2(-14, -3, 28, 6), Color(0.92, 0.88, 0.82))
+		__draw_filled_ellipse(Rect2(-18, -4, 36, 8), Color(0.72, 0.5, 0.7))
+		__draw_filled_ellipse(Rect2(-14, -3, 28, 6), Color(0.92, 0.88, 0.82))
 		# Onion juice/tears splash
 		draw_circle(Vector2(-10, 3), 2.5, Color(0.55, 0.7, 0.95, 0.5))
 		draw_circle(Vector2(8, 2), 2, Color(0.55, 0.7, 0.95, 0.5))
