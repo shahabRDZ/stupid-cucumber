@@ -418,7 +418,22 @@ func die() -> void:
 	dust_particles.emitting = false
 	star_particles.emitting = false
 	died.emit()
-	GameManager.trigger_game_over()
+	GameManager.lose_life()
+
+
+func respawn() -> void:
+	current_state = State.IDLE
+	death_gray_t = 0.0
+	velocity = Vector2.ZERO
+	global_position = GameManager.respawn_position
+	squash_stretch = Vector2(1.0, 1.0)
+	burn_speed_mult = 1.0
+	burn_control_penalty = 1.0
+	burn_wobble = 0.0
+	rotation_wobble = 0.0
+	facing_right = true
+	if fire_particles:
+		fire_particles.emitting = false
 
 
 func collect_salt() -> void:

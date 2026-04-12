@@ -85,6 +85,9 @@ func _ready() -> void:
 		tutorial.set_script(tut_script)
 		add_child(tutorial)
 
+	# -- RESPAWN SYSTEM --
+	GameManager.player_respawned.connect(_on_player_respawned)
+
 	# -- WORLD BOUNDARY (kill zone below) --
 	var kill_zone := Area2D.new()
 	kill_zone.position = Vector2(0, 1000)
@@ -97,6 +100,20 @@ func _ready() -> void:
 	kill_zone.add_child(kz_shape)
 	kill_zone.body_entered.connect(_on_kill_zone_entered)
 	add_child(kill_zone)
+
+
+func _process(_delta: float) -> void:
+	# Update respawn checkpoint (player's last safe ground position)
+	if player and player.is_on_floor() and player.current_state != player.State.DEAD:
+		GameManager.update_respawn_position(player.global_position)
+
+
+func _on_player_respawned() -> void:
+	# Wait a moment then respawn
+	await get_tree().create_timer(1.0).timeout
+	if player and player.has_method("respawn"):
+		player.respawn()
+		camera.global_position = player.global_position
 
 
 func _on_kill_zone_entered(body: Node2D) -> void:

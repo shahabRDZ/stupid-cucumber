@@ -24,6 +24,9 @@ var achievement_popup: AchievementPopup
 # Boss bar
 var boss_bar: BossBar
 
+# Lives display
+var lives_container: HBoxContainer
+
 # Animation state
 var combo_scale: float = 1.0
 var combo_timer: float = 0.0
@@ -33,6 +36,7 @@ var salt_pop_scale: float = 1.0
 func _ready() -> void:
 	layer = 10
 
+	_build_lives_display()
 	_build_score_display()
 	_build_salt_display()
 	_build_power_bars()
@@ -106,6 +110,28 @@ func _update_power_bar(bar: PowerBar, is_active: bool, timer: float, duration: f
 # ==============================================================
 # BUILD UI
 # ==============================================================
+
+func _build_lives_display() -> void:
+	lives_container = HBoxContainer.new()
+	lives_container.position = Vector2(15, 52)
+	lives_container.add_theme_constant_override("separation", 4)
+	add_child(lives_container)
+	_refresh_lives()
+
+
+func _refresh_lives() -> void:
+	for child in lives_container.get_children():
+		child.queue_free()
+	for i in range(GameManager.MAX_LIVES):
+		var heart := LifeIcon.new()
+		heart.custom_minimum_size = Vector2(22, 22)
+		heart.is_active = i < GameManager.lives
+		lives_container.add_child(heart)
+
+
+func _on_lives_changed(_lives: int) -> void:
+	_refresh_lives()
+
 
 func _build_score_display() -> void:
 	# Background panel
@@ -310,6 +336,7 @@ func _connect_signals() -> void:
 	GameManager.achievement_unlocked.connect(_on_achievement_unlocked)
 	GameManager.boss_spawned.connect(_on_boss_spawned)
 	GameManager.boss_defeated.connect(_on_boss_defeated)
+	GameManager.lives_changed.connect(_on_lives_changed)
 
 
 func _on_score_changed(new_score: int) -> void:
@@ -815,3 +842,35 @@ class BossBar extends Control:
 		for i in range(4):
 			var tx: float = center.x - 4.0 + float(i) * 2.5
 			draw_rect(Rect2(Vector2(tx, center.y + 5), Vector2(2, 3)), Color(0.9, 0.88, 0.82))
+
+
+class LifeIcon extends Control:
+	var is_active: bool = true
+
+	func _draw() -> void:
+		var cx: float = size.x / 2.0
+		var cy: float = size.y / 2.0
+		var color: Color = Color(0.3, 0.75, 0.2) if is_active else Color(0.3, 0.3, 0.3, 0.4)
+		# Small cucumber head
+		_draw_filled_ellipse(Vector2(cx, cy), Vector2(8, 10), color)
+		if is_active:
+			# Eyes
+			draw_circle(Vector2(cx - 3, cy - 2), 1.5, Color.WHITE)
+			draw_circle(Vector2(cx + 3, cy - 2), 1.5, Color.WHITE)
+			draw_circle(Vector2(cx - 3, cy - 2), 0.8, Color(0.1, 0.1, 0.1))
+			draw_circle(Vector2(cx + 3, cy - 2), 0.8, Color(0.1, 0.1, 0.1))
+			# Smile
+			draw_arc(Vector2(cx, cy + 3), 3, 0.2, PI - 0.2, 6, Color(0.1, 0.1, 0.1), 1.0)
+		else:
+			# X eyes
+			draw_line(Vector2(cx - 4, cy - 4), Vector2(cx - 1, cy - 1), Color(0.5, 0.5, 0.5), 1.5)
+			draw_line(Vector2(cx - 1, cy - 4), Vector2(cx - 4, cy - 1), Color(0.5, 0.5, 0.5), 1.5)
+			draw_line(Vector2(cx + 1, cy - 4), Vector2(cx + 4, cy - 1), Color(0.5, 0.5, 0.5), 1.5)
+			draw_line(Vector2(cx + 4, cy - 4), Vector2(cx + 1, cy - 1), Color(0.5, 0.5, 0.5), 1.5)
+
+	func _draw_filled_ellipse(center: Vector2, sz: Vector2, color: Color) -> void:
+		var points: PackedVector2Array = []
+		for i in range(20):
+			var angle: float = float(i) / 19.0 * TAU
+			points.append(center + Vector2(cos(angle) * sz.x, sin(angle) * sz.y))
+		draw_colored_polygon(points, color)

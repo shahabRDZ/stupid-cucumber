@@ -7,6 +7,8 @@ signal salt_changed(new_salt: int)
 signal chili_activated(duration: float)
 signal chili_ended
 signal player_died
+signal player_respawned
+signal lives_changed(lives: int)
 signal combo_changed(combo: int)
 signal shield_activated
 signal shield_ended
@@ -48,6 +50,11 @@ var shield_hits: int = 0
 var is_oil_active: bool = false
 var oil_timer: float = 0.0
 var oil_duration: float = 5.0
+
+# Lives system
+var lives: int = 6
+const MAX_LIVES: int = 6
+var respawn_position: Vector2 = Vector2(200, 400)
 
 # Game state
 var is_game_over: bool = false
@@ -325,17 +332,31 @@ func defeat_boss() -> void:
 	_check_achievements()
 
 
+func lose_life() -> void:
+	lives -= 1
+	lives_changed.emit(lives)
+	play_sound.emit("die")
+
+	if lives <= 0:
+		trigger_game_over()
+	else:
+		player_respawned.emit()
+
+
 func trigger_game_over() -> void:
 	if is_game_over:
 		return
 	is_game_over = true
-	play_sound.emit("die")
 
 	if score > high_score:
 		high_score = score
 		save_save_data()
 
 	player_died.emit()
+
+
+func update_respawn_position(pos: Vector2) -> void:
+	respawn_position = pos
 
 
 func get_random_game_over_message() -> String:
@@ -385,6 +406,7 @@ func advance_tutorial() -> void:
 
 
 func restart_game() -> void:
+	lives = MAX_LIVES
 	score = 0
 	salt_collected = 0
 	combo = 0

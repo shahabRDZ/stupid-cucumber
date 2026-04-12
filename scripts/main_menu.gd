@@ -161,6 +161,15 @@ func _ready() -> void:
 	cucumber_preview.position = Vector2(viewport_size.x * 0.5, viewport_size.y * 0.8)
 	add_child(cucumber_preview)
 
+	# Creator credit bottom-left
+	var credit := Label.new()
+	credit.text = "Made by shahabrdz.dev"
+	credit.add_theme_font_size_override("font_size", 13)
+	credit.add_theme_color_override("font_color", Color(0.6, 0.85, 0.4, 0.6))
+	credit.set_anchors_preset(PRESET_BOTTOM_LEFT)
+	credit.position = Vector2(15, -25)
+	add_child(credit)
+
 	# Version label bottom-right
 	var version := Label.new()
 	version.text = "v0.3 - Phase 3"
