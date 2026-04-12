@@ -1,0 +1,17 @@
+# Godot 4+ specific ignores
+.godot/
+
+# Godot-specific ignores
+*.translation
+
+# Imported textures, meshes, etc
+.import/
+
+# OS generated
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Editor backup files
+*.bak
