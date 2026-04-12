@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-## Game Over screen - Phase 2 with detailed stats and dead cucumber
+## Game Over screen - Phase 3 with detailed stats, dead cucumber, and boss stats
 
 var is_visible: bool = false
 var anim_timer: float = 0.0
@@ -13,6 +13,7 @@ var best_value: Label
 var salt_label: Label
 var distance_label: Label
 var enemies_label: Label
+var bosses_label: Label
 var retry_btn: Button
 var menu_btn: Button
 var stats_container: VBoxContainer
@@ -32,8 +33,8 @@ func _ready() -> void:
 	# Panel
 	panel = Panel.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-200, -250)
-	panel.size = Vector2(400, 500)
+	panel.position = Vector2(-200, -270)
+	panel.size = Vector2(400, 540)
 
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = Color(0.1, 0.1, 0.13, 0.96)
@@ -65,7 +66,7 @@ func _ready() -> void:
 
 	# Dead cucumber drawing
 	var dead_cuc := DeadCucumber.new()
-	dead_cuc.custom_minimum_size = Vector2(0, 50)
+	dead_cuc.custom_minimum_size = Vector2(0, 55)
 	vbox.add_child(dead_cuc)
 
 	# Game Over text
@@ -115,7 +116,7 @@ func _ready() -> void:
 	best_value.add_theme_color_override("font_color", Color(0.6, 0.7, 0.5))
 	vbox.add_child(best_value)
 
-	# Stats container (salt, distance, enemies) - delayed reveal
+	# Stats container (salt, distance, enemies, bosses) - delayed reveal
 	stats_container = VBoxContainer.new()
 	stats_container.add_theme_constant_override("separation", 4)
 	stats_container.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -147,12 +148,20 @@ func _ready() -> void:
 	enemies_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.7))
 	stats_container.add_child(enemies_label)
 
+	# Bosses defeated
+	bosses_label = Label.new()
+	bosses_label.text = ""
+	bosses_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bosses_label.add_theme_font_size_override("font_size", 14)
+	bosses_label.add_theme_color_override("font_color", Color(0.9, 0.6, 0.9))
+	stats_container.add_child(bosses_label)
+
 	# Spacer
 	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 6)
+	spacer.custom_minimum_size = Vector2(0, 4)
 	vbox.add_child(spacer)
 
-	# Retry button
+	# Retry button (green)
 	retry_btn = Button.new()
 	retry_btn.text = "TRY AGAIN"
 	retry_btn.add_theme_font_size_override("font_size", 22)
@@ -181,7 +190,7 @@ func _ready() -> void:
 	retry_btn.pressed.connect(_on_retry)
 	vbox.add_child(retry_btn)
 
-	# Menu button
+	# Menu button (gray)
 	menu_btn = Button.new()
 	menu_btn.text = "MENU"
 	menu_btn.add_theme_font_size_override("font_size", 16)
@@ -232,7 +241,8 @@ func show_game_over() -> void:
 	# Stats
 	salt_label.text = "Salt collected: %d" % GameManager.salt_collected
 	distance_label.text = "Distance: %dm" % int(GameManager.distance_traveled)
-	enemies_label.text = "Enemies defeated: %d" % GameManager.enemies_killed
+	enemies_label.text = "Enemies killed: %d" % GameManager.enemies_killed
+	bosses_label.text = "Bosses defeated: %d" % GameManager.bosses_defeated
 
 	# Reset animation state
 	panel.scale = Vector2(0.3, 0.3)
@@ -294,28 +304,21 @@ class DeadCucumber extends Control:
 		var center_x: float = size.x * 0.5
 		var cy: float = size.y * 0.6
 
-		# Body lying on its side (rotated ellipse)
+		# Body lying on its side (horizontal ellipse)
 		var body_color := Color(0.25, 0.6, 0.15)
 		var body_dark := Color(0.18, 0.45, 0.1)
 
 		# Main body - horizontal cucumber (lying down)
-		var body_points: PackedVector2Array = PackedVector2Array()
-		for i in range(28):
-			var angle: float = float(i) / 27.0 * TAU
-			body_points.append(Vector2(center_x + cos(angle) * 28, cy + sin(angle) * 12))
-		draw_colored_polygon(body_points, body_color)
+		_draw_filled_ellipse(Vector2(center_x, cy), Vector2(28, 12), body_color)
 
 		# Light stripe
-		var stripe_points: PackedVector2Array = PackedVector2Array()
-		for i in range(28):
-			var angle: float = float(i) / 27.0 * TAU
-			stripe_points.append(Vector2(center_x + cos(angle) * 22, cy - 2 + sin(angle) * 7))
-		draw_colored_polygon(stripe_points, body_color.lightened(0.15))
+		_draw_filled_ellipse(Vector2(center_x, cy - 2), Vector2(22, 7), body_color.lightened(0.15))
 
 		# Bumps
 		draw_circle(Vector2(center_x + 12, cy - 5), 2.5, body_dark.lerp(body_color, 0.5))
 		draw_circle(Vector2(center_x - 8, cy - 4), 2.0, body_dark.lerp(body_color, 0.5))
 		draw_circle(Vector2(center_x + 18, cy + 2), 2.0, body_dark.lerp(body_color, 0.5))
+		draw_circle(Vector2(center_x - 16, cy + 1), 1.8, body_dark.lerp(body_color, 0.5))
 
 		# Stem (on right side since lying down)
 		draw_rect(Rect2(center_x + 26, cy - 3, 6, 5), Color(0.2, 0.45, 0.1))
@@ -337,13 +340,35 @@ class DeadCucumber extends Control:
 		draw_arc(Vector2(center_x - 2, cy + 5), 4.0, PI + 0.3, TAU - 0.3, 8, Color(0.12, 0.12, 0.12), 1.5)
 
 		# Tongue sticking out
-		draw_circle(Vector2(center_x + 2, cy + 7), 2.0, Color(0.8, 0.3, 0.3, 0.6))
+		_draw_filled_ellipse(Vector2(center_x + 2, cy + 7), Vector2(3, 2), Color(0.8, 0.3, 0.3, 0.7))
 
 		# Little stars/dizzy effect above head
 		var star_alpha: float = (sin(timer * 3.0) * 0.4 + 0.6)
 		_draw_star(Vector2(center_x - 12, cy - 16), 3.0, Color(1, 1, 0.5, star_alpha * 0.7))
 		_draw_star(Vector2(center_x + 2, cy - 19), 2.5, Color(1, 1, 0.5, star_alpha * 0.5))
 		_draw_star(Vector2(center_x + 14, cy - 15), 2.0, Color(1, 1, 0.5, star_alpha * 0.6))
+
+		# Rotating stars orbit
+		var orbit_angle: float = timer * 2.0
+		var orbit_r: float = 18.0
+		for i in range(3):
+			var a: float = orbit_angle + float(i) * TAU / 3.0
+			var sx: float = center_x + cos(a) * orbit_r
+			var sy: float = cy - 14 + sin(a) * 5.0
+			_draw_star(Vector2(sx, sy), 2.0, Color(1.0, 0.95, 0.4, star_alpha * 0.5))
+
+		# Halo above head
+		var halo_y: float = cy - 22
+		var halo_alpha: float = (sin(timer * 1.5) * 0.2 + 0.6)
+		draw_arc(Vector2(center_x, halo_y), 10, 0, TAU, 24, Color(1.0, 0.95, 0.5, halo_alpha), 1.5)
+		draw_arc(Vector2(center_x, halo_y), 8, 0, TAU, 20, Color(1.0, 1.0, 0.7, halo_alpha * 0.5), 1.0)
+
+	func _draw_filled_ellipse(center: Vector2, sz: Vector2, color: Color) -> void:
+		var points: PackedVector2Array = PackedVector2Array()
+		for i in range(28):
+			var angle: float = float(i) / 27.0 * TAU
+			points.append(center + Vector2(cos(angle) * sz.x, sin(angle) * sz.y))
+		draw_colored_polygon(points, color)
 
 	func _draw_star(pos: Vector2, sz: float, color: Color) -> void:
 		# Simple 4-point star

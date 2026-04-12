@@ -1,7 +1,8 @@
 extends CanvasLayer
 
-## In-game HUD for Stupid Cucumber
-## Displays score, salt, power-up bars, combos, distance, achievements, and touch controls.
+## In-game HUD for Stupid Cucumber - Phase 3
+## Displays score, salt, power-up bars, combos, distance, achievements,
+## boss HP bar, and touch controls.
 
 var player: CharacterBody2D = null
 
@@ -20,6 +21,9 @@ var power_bar_container: VBoxContainer
 # Achievement system
 var achievement_popup: AchievementPopup
 
+# Boss bar
+var boss_bar: BossBar
+
 # Animation state
 var combo_scale: float = 1.0
 var combo_timer: float = 0.0
@@ -35,6 +39,7 @@ func _ready() -> void:
 	_build_combo_label()
 	_build_distance_display()
 	_build_achievement_popup()
+	_build_boss_bar()
 	_build_touch_controls()
 	_connect_signals()
 
@@ -67,6 +72,22 @@ func _process(delta: float) -> void:
 
 	# --- Distance ---
 	distance_label.text = "%dm" % int(GameManager.distance_traveled)
+
+	# --- Boss bar ---
+	if GameManager.is_boss_active:
+		boss_bar.visible = true
+		if GameManager.boss_max_hp > 0:
+			boss_bar.fill = float(GameManager.boss_hp) / float(GameManager.boss_max_hp)
+		else:
+			boss_bar.fill = 0.0
+		boss_bar.queue_redraw()
+	else:
+		if boss_bar.visible:
+			boss_bar.fill = lerpf(boss_bar.fill, 0.0, delta * 4.0)
+			if boss_bar.fill < 0.01:
+				boss_bar.fill = 0.0
+				boss_bar.visible = false
+			boss_bar.queue_redraw()
 
 
 func _update_power_bar(bar: PowerBar, is_active: bool, timer: float, duration: float) -> void:
@@ -257,6 +278,15 @@ func _build_achievement_popup() -> void:
 	add_child(achievement_popup)
 
 
+func _build_boss_bar() -> void:
+	boss_bar = BossBar.new()
+	boss_bar.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	boss_bar.position = Vector2(-150, 2)
+	boss_bar.size = Vector2(300, 28)
+	boss_bar.visible = false
+	add_child(boss_bar)
+
+
 func _build_touch_controls() -> void:
 	var touch_ui := TouchControls.new()
 	touch_ui.name = "TouchControls"
@@ -278,6 +308,8 @@ func _connect_signals() -> void:
 	GameManager.oil_activated.connect(_on_oil_activated)
 	GameManager.oil_ended.connect(_on_oil_ended)
 	GameManager.achievement_unlocked.connect(_on_achievement_unlocked)
+	GameManager.boss_spawned.connect(_on_boss_spawned)
+	GameManager.boss_defeated.connect(_on_boss_defeated)
 
 
 func _on_score_changed(new_score: int) -> void:
@@ -289,16 +321,16 @@ func _on_salt_changed(new_salt: int) -> void:
 	salt_pop_scale = 1.3
 
 
-func _on_combo_changed(combo: int) -> void:
-	if combo >= 3:
-		combo_label.text = "%dx COMBO!" % combo
+func _on_combo_changed(new_combo: int) -> void:
+	if new_combo >= 3:
+		combo_label.text = "%dx COMBO!" % new_combo
 		combo_label.modulate.a = 1.0
 		combo_scale = 1.5
 		combo_timer = 2.0
 
-		if combo >= 10:
+		if new_combo >= 10:
 			combo_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.8))
-		elif combo >= 7:
+		elif new_combo >= 7:
 			combo_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.0))
 		else:
 			combo_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2))
@@ -332,6 +364,16 @@ func _on_achievement_unlocked(title: String, description: String) -> void:
 	achievement_popup.queue_achievement(title, description)
 
 
+func _on_boss_spawned(_biome: int) -> void:
+	boss_bar.visible = true
+	boss_bar.fill = 1.0
+	boss_bar.queue_redraw()
+
+
+func _on_boss_defeated(_biome: int) -> void:
+	pass
+
+
 # ==============================================================
 # INPUT HANDLING FOR TOUCH CONTROLS
 # ==============================================================
@@ -341,19 +383,20 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventScreenTouch:
-		var touch: InputEventScreenTouch = event as InputEventScreenTouch
-		var pos: Vector2 = touch.position
-		if not touch.pressed:
-			player.touch_left = false
-			player.touch_right = false
-			player.touch_jump = false
-			return
-		_handle_touch_position(pos)
-
-	elif event is InputEventScreenDrag:
-		var drag: InputEventScreenDrag = event as InputEventScreenDrag
-		var pos: Vector2 = drag.position
-		_handle_touch_position(pos)
+		var touch := event as InputEventScreenTouch
+		if touch:
+			var pos: Vector2 = touch.position
+			if not touch.pressed:
+				player.touch_left = false
+				player.touch_right = false
+				player.touch_jump = false
+				return
+			_handle_touch_position(pos)
+	else:
+		var drag := event as InputEventScreenDrag
+		if drag:
+			var pos: Vector2 = drag.position
+			_handle_touch_position(pos)
 
 
 func _handle_touch_position(pos: Vector2) -> void:
@@ -377,10 +420,20 @@ func _handle_touch_position(pos: Vector2) -> void:
 # ==============================================================
 
 class SaltIcon extends Control:
-	## Draws a sparkling salt crystal diamond shape.
+	## Draws a sparkling salt crystal diamond shape with animated glow.
+
+	var anim_time: float = 0.0
+
+	func _process(delta: float) -> void:
+		anim_time += delta
+		queue_redraw()
 
 	func _draw() -> void:
 		var c: Vector2 = size / 2.0
+
+		# Glow behind crystal
+		var glow_alpha: float = (sin(anim_time * 2.5) * 0.3 + 0.5) * 0.4
+		draw_circle(c, 14.0, Color(0.7, 0.8, 1.0, glow_alpha))
 
 		# Outer diamond
 		var outer := PackedVector2Array([
@@ -401,17 +454,16 @@ class SaltIcon extends Control:
 		draw_colored_polygon(inner, Color(1.0, 1.0, 1.0, 0.7))
 
 		# Sparkle dots
-		var sparkle_alpha: float = (sin(float(Engine.get_process_frames()) * 0.15) * 0.5 + 0.5) * 0.8
+		var sparkle_alpha: float = (sin(anim_time * 3.0) * 0.5 + 0.5) * 0.8
 		draw_circle(c + Vector2(-4, -8), 1.5, Color(1, 1, 1, sparkle_alpha))
 		draw_circle(c + Vector2(6, 3), 1.2, Color(1, 1, 1, sparkle_alpha * 0.7))
 		draw_circle(c + Vector2(-2, 9), 1.0, Color(1, 1, 1, sparkle_alpha * 0.5))
-
-	func _process(_delta: float) -> void:
-		queue_redraw()
+		draw_circle(c + Vector2(4, -5), 1.0, Color(1, 1, 1, sparkle_alpha * 0.6))
 
 
 class PowerBar extends Control:
-	## A generic horizontal power-up bar with animated fill, colored gradient, and icon.
+	## A generic horizontal power-up bar with animated fill, colored gradient,
+	## shimmer effect, and icon.
 
 	enum IconType { FLAME, BUBBLE, DROP }
 
@@ -435,6 +487,12 @@ class PowerBar extends Control:
 			var shimmer: float = sin(float(Engine.get_process_frames()) * 0.2) * 0.5 + 0.5
 			var col: Color = fill_color_start.lerp(fill_color_end, shimmer)
 			draw_rect(Rect2(bar_rect.position, Vector2(fill_width, bar_rect.size.y)), col)
+
+			# Shimmer sweep highlight
+			var sweep: float = fmod(float(Engine.get_process_frames()) * 0.03, 1.0)
+			var sweep_x: float = bar_rect.position.x + fill_width * sweep
+			var sweep_w: float = minf(20.0, fill_width * 0.15)
+			draw_rect(Rect2(Vector2(sweep_x, bar_rect.position.y), Vector2(sweep_w, bar_rect.size.y)), Color(1, 1, 1, 0.15))
 
 			# Bright edge highlight
 			var highlight_x: float = bar_rect.position.x + fill_width - 2.0
@@ -557,7 +615,7 @@ class AchievementPopup extends Control:
 	## Animated achievement notification that slides in from the top.
 	## Supports queuing multiple achievements.
 
-	var queue: Array[Dictionary] = []
+	var popup_queue: Array[Dictionary] = []
 	var current_title: String = ""
 	var current_description: String = ""
 	var state: int = 0  # 0=hidden, 1=sliding_in, 2=showing, 3=sliding_out
@@ -570,8 +628,8 @@ class AchievementPopup extends Control:
 	func _process(delta: float) -> void:
 		match state:
 			0:  # Hidden - check queue
-				if queue.size() > 0:
-					var entry: Dictionary = queue.pop_front()
+				if popup_queue.size() > 0:
+					var entry: Dictionary = popup_queue.pop_front()
 					current_title = entry.get("title", "")
 					current_description = entry.get("desc", "")
 					state = 1
@@ -593,7 +651,7 @@ class AchievementPopup extends Control:
 		queue_redraw()
 
 	func queue_achievement(title: String, description: String) -> void:
-		queue.append({"title": title, "desc": description})
+		popup_queue.append({"title": title, "desc": description})
 
 	func _draw() -> void:
 		if state == 0:
@@ -609,10 +667,10 @@ class AchievementPopup extends Control:
 		_draw_rounded_rect(panel_rect, bg_color, 10.0)
 
 		# Gold border
-		var border_color := Color(0.95, 0.8, 0.2, 0.7)
-		_draw_rounded_rect_outline(panel_rect, border_color, 10.0, 2.0)
+		var border_col := Color(0.95, 0.8, 0.2, 0.7)
+		_draw_rounded_rect_outline(panel_rect, border_col, 10.0, 2.0)
 
-		# Trophy icon (simple drawn trophy)
+		# Trophy icon
 		var trophy_x: float = 28.0
 		var trophy_y: float = offset_y + size.y / 2.0
 		_draw_trophy(Vector2(trophy_x, trophy_y))
@@ -661,7 +719,6 @@ class AchievementPopup extends Control:
 		draw_circle(center + Vector2(0, -4), 2.5, Color(1.0, 1.0, 0.6, 0.7))
 
 	func _draw_rounded_rect(rect: Rect2, color: Color, radius: float) -> void:
-		# Simplified rounded rect using polygon approximation
 		var pts := PackedVector2Array()
 		var corners: Array[Vector2] = [
 			rect.position + Vector2(radius, 0),
@@ -698,3 +755,63 @@ class AchievementPopup extends Control:
 		var c1: float = 1.70158
 		var c3: float = c1 + 1.0
 		return 1.0 + c3 * pow(t - 1.0, 3) + c1 * pow(t - 1.0, 2)
+
+
+class BossBar extends Control:
+	## Boss HP bar shown at the top during boss fights.
+	## Red fill with skull icon on the left.
+
+	var fill: float = 1.0
+
+	func _draw() -> void:
+		var bar_rect := Rect2(Vector2(30, 0), Vector2(size.x - 30, size.y))
+
+		# Background
+		draw_rect(bar_rect, Color(0.15, 0.05, 0.05, 0.7))
+
+		# Red fill
+		var fill_width: float = bar_rect.size.x * fill
+		if fill_width > 0.5:
+			var pulse: float = sin(float(Engine.get_process_frames()) * 0.15) * 0.15 + 0.85
+			var red_col := Color(0.85 * pulse, 0.1, 0.08)
+			draw_rect(Rect2(bar_rect.position, Vector2(fill_width, bar_rect.size.y)), red_col)
+
+			# Bright edge
+			var edge_x: float = bar_rect.position.x + fill_width - 2.0
+			draw_rect(Rect2(Vector2(edge_x, bar_rect.position.y), Vector2(2, bar_rect.size.y)), Color(1, 0.3, 0.2, 0.5))
+
+		# Border
+		draw_rect(bar_rect, Color(0.8, 0.2, 0.15, 0.8), false, 2.0)
+
+		# Skull icon on the left
+		var skull_center := Vector2(15, size.y / 2.0)
+		_draw_skull(skull_center)
+
+		# "BOSS" label
+		draw_string(
+			ThemeDB.fallback_font,
+			Vector2(bar_rect.position.x + 4, size.y - 7),
+			"BOSS",
+			HORIZONTAL_ALIGNMENT_LEFT,
+			-1, 12,
+			Color(1, 1, 1, 0.6)
+		)
+
+	func _draw_skull(center: Vector2) -> void:
+		# Head
+		draw_circle(center + Vector2(0, -2), 8, Color(0.9, 0.88, 0.82))
+		# Jaw
+		draw_rect(Rect2(center + Vector2(-5, 3), Vector2(10, 5)), Color(0.85, 0.82, 0.78))
+		# Eye sockets
+		draw_circle(center + Vector2(-3, -3), 2.5, Color(0.15, 0.05, 0.05))
+		draw_circle(center + Vector2(3, -3), 2.5, Color(0.15, 0.05, 0.05))
+		# Nose
+		draw_colored_polygon(PackedVector2Array([
+			center + Vector2(0, 0),
+			center + Vector2(-1.5, 3),
+			center + Vector2(1.5, 3),
+		]), Color(0.25, 0.1, 0.08))
+		# Teeth
+		for i in range(4):
+			var tx: float = center.x - 4.0 + float(i) * 2.5
+			draw_rect(Rect2(Vector2(tx, center.y + 5), Vector2(2, 3)), Color(0.9, 0.88, 0.82))
