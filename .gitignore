@@ -15,3 +15,15 @@
 
 # Editor backup files
 *.bak
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Logs
+*.log
+
+# Build exports
+exports/
+builds/
